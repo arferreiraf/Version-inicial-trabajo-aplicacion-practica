@@ -1,2 +1,2 @@
 # Version-inicial-trabajo-aplicacion-practica
-Avances 
+Avances en el proyecto
