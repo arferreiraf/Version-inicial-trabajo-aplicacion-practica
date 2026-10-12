@@ -532,6 +532,12 @@ select:focus,input:focus{
   .chord-position-row button{width:100%}
 }
 
+.composer-panel{
+  margin-top:18px;
+  padding-top:18px;
+  border-top:1px dashed color-mix(in oklab,var(--color-base-content) 14%,transparent);
+}
+.composer-panel .progression-info{margin-top:8px}
 .progression-panel{margin-top:22px;padding-top:20px;border-top:1px solid color-mix(in oklab,var(--color-base-content) 12%,transparent)}
 .progression-line{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 .progression-chord{
@@ -798,9 +804,16 @@ select:focus,input:focus{
           <label for="progressionStyle">Estilo / familia</label>
           <select id="progressionStyle">
             <option value="jazz" selected>Jazz</option>
+            <option value="bossa">Bossa nova</option>
             <option value="soul">Soul / Neo-soul</option>
+            <option value="rnb">Rhythm & Blues</option>
+            <option value="funk">Funk</option>
+            <option value="gospel">Gospel</option>
             <option value="blues">Blues</option>
             <option value="pop">Pop / funcional</option>
+            <option value="cueca">Folclor chileno · Cueca</option>
+            <option value="zamba">Folclor argentino · Zamba</option>
+            <option value="folk_latam">Folclor latinoamericano</option>
             <option value="modulation">Modulaciones</option>
           </select>
         </div>
@@ -814,6 +827,30 @@ select:focus,input:focus{
       <div class="actions">
         <button class="secondary" id="playProgression">▶ Reproducir progresión</button>
       </div>
+
+      <div class="composer-panel">
+        <div class="harmony-controls">
+          <div>
+            <label for="composerSelect">Autor / compositor</label>
+            <select id="composerSelect">
+              <option value="">— Elegir compositor —</option>
+              <option value="stevie">Stevie Wonder</option>
+            </select>
+          </div>
+          <div>
+            <label for="composerSong">Canción / referencia</label>
+            <select id="composerSong" disabled>
+              <option value="">Selecciona un compositor</option>
+            </select>
+          </div>
+        </div>
+        <div class="progression-line" id="composerProgressionLine"></div>
+        <div class="progression-info" id="composerInfo"></div>
+        <div class="actions">
+          <button class="secondary" id="playComposerProgression" disabled>▶ Reproducir referencia</button>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -1353,37 +1390,250 @@ chordSymbol=$("chordSymbol"),chordLatin=$("chordLatin"),chordNotes=$("chordNotes
 playChordBtn=$("playChord"),playArpeggioBtn=$("playArpeggio"),progressionStyle=$("progressionStyle"),
 progressionType=$("progressionType"),progressionLine=$("progressionLine"),progressionInfo=$("progressionInfo"),
 playProgressionBtn=$("playProgression"),
+composerSelect=$("composerSelect"),composerSong=$("composerSong"),
+composerProgressionLine=$("composerProgressionLine"),composerInfo=$("composerInfo"),
+playComposerProgressionBtn=$("playComposerProgression"),
 chordPosition=$("chordPosition"),playGuitarVoicingBtn=$("playGuitarVoicing"),
 chordDiagram=$("chordDiagram"),chordFretboard=$("chordFretboard"),chordShapeNote=$("chordShapeNote");
 
+const P=(name,steps,info)=>({name,steps,info});
+const repeatVariants=(base,label,info)=>base.map((steps,i)=>P(label+" "+String(i+1).padStart(2,"0"),steps,info));
+
 const PROGRESSIONS={
   jazz:[
-    {name:"ii–V–I mayor",steps:[[2,"m7"],[7,"7"],[0,"maj7"]],info:"La cadencia funcional esencial del jazz. Practica conducción de voces entre 3ª y 7ª."},
-    {name:"iiø–V–i menor",steps:[[2,"m7♭5"],[7,"7♭9"],[0,"m(maj7)"]],info:"Resolución menor clásica: ii semidisminuido, V alterado y tónica menor."},
-    {name:"Turnaround I–vi–ii–V",steps:[[0,"maj7"],[9,"m7"],[2,"m7"],[7,"7"]],info:"Turnaround básico de estándares; conecta el final con un nuevo comienzo."},
-    {name:"Turnaround III–VI–ii–V",steps:[[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],info:"Variante con dominante secundario en VI para mayor impulso hacia ii–V."},
-    {name:"Rhythm changes A",steps:[[0,"maj7"],[9,"7"],[2,"m7"],[7,"7"],[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],info:"Esqueleto funcional frecuente de la sección A de rhythm changes."},
-    {name:"Coltrane changes (ciclo mayor)",steps:[[0,"maj7"],[3,"7"],[8,"maj7"],[11,"7"],[4,"maj7"],[7,"7"],[0,"maj7"]],info:"Movimiento por centros mayores separados por terceras mayores, enlazados por dominantes."}
+    P("ii–V–I mayor",[[2,"m7"],[7,"7"],[0,"maj7"]],"Cadencia funcional esencial del jazz."),
+    P("iiø–V–i menor",[[2,"m7♭5"],[7,"7♭9"],[0,"m(maj7)"]],"Resolución menor clásica."),
+    P("Turnaround I–vi–ii–V",[[0,"maj7"],[9,"m7"],[2,"m7"],[7,"7"]],"Turnaround básico de estándares."),
+    P("Turnaround III–VI–ii–V",[[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],"Variante con dominante secundario."),
+    P("Rhythm changes A",[[0,"maj7"],[9,"7"],[2,"m7"],[7,"7"],[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],"Esqueleto de rhythm changes."),
+    P("Coltrane changes",[[0,"maj7"],[3,"7"],[8,"maj7"],[11,"7"],[4,"maj7"],[7,"7"],[0,"maj7"]],"Centros mayores por terceras mayores."),
+    P("Backdoor ii–V",[[5,"m7"],[10,"7"],[0,"maj7"]],"Resolución por ♭VII dominante."),
+    P("Tritono ii–♭II7–I",[[2,"m7"],[1,"7"],[0,"maj7"]],"Sustitución de tritono del V."),
+    P("I–II7–ii–V",[[0,"maj7"],[2,"7"],[2,"m7"],[7,"7"]],"Color tipo A Train."),
+    P("Circle of fifths",[[4,"m7"],[9,"7"],[2,"m7"],[7,"7"],[0,"maj7"]],"Movimiento por quintas."),
+    P("Minor line cliché",[[0,"m"],[0,"m(maj7)"],[0,"m7"],[0,"m6"]],"Movimiento cromático interno."),
+    P("IV–iv–I",[[5,"maj7"],[5,"m7"],[0,"maj7"]],"Intercambio modal."),
+    P("iii–VI–ii–V",[[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],"Cadena funcional."),
+    P("I–VI7–ii–V",[[0,"maj7"],[9,"7"],[2,"m7"],[7,"7"]],"Turnaround con VI dominante."),
+    P("Descending ii–V",[[4,"m7"],[9,"7"],[2,"m7"],[7,"7"],[0,"maj7"]],"ii–V encadenados descendentes.")
+  ],
+  bossa:[
+    P("Bossa ii–V–I maj9",[[2,"m9"],[7,"13"],[0,"maj9"]],"Cadencia bossa con extensiones."),
+    P("I–VI7–ii–V",[[0,"maj7"],[9,"7"],[2,"m7"],[7,"9"]],"Movimiento funcional muy común."),
+    P("I–iii–VI7–ii–V",[[0,"maj7"],[4,"m7"],[9,"7"],[2,"m7"],[7,"9"]],"Cadena suave con dominante secundario."),
+    P("I–I7–IV–iv",[[0,"maj7"],[0,"7"],[5,"maj7"],[5,"m6"]],"Color de intercambio modal."),
+    P("ii–V–iii–VI",[[2,"m7"],[7,"7"],[4,"m7"],[9,"7"]],"Secuencia circular."),
+    P("Imaj7–♯Idim–ii7",[[0,"maj7"],[1,"dim7"],[2,"m7"]],"Paso cromático disminuido."),
+    P("IVmaj7–iv6–I",[[5,"maj7"],[5,"m6"],[0,"maj7"]],"Subdominante menor."),
+    P("I–III7–vi",[[0,"maj7"],[4,"7"],[9,"m7"]],"Dominante secundaria hacia vi."),
+    P("vi–II7–ii–V",[[9,"m7"],[2,"7"],[2,"m7"],[7,"9"]],"Cadena bossa circular."),
+    P("I–♭VII7–VI7",[[0,"maj7"],[10,"7"],[9,"7"]],"Descenso cromático de dominantes."),
+    P("iiø–V7♭9–i",[[2,"m7♭5"],[7,"7♭9"],[0,"m9"]],"Cadencia menor bossa."),
+    P("I6–ii7–V9",[[0,"6"],[2,"m7"],[7,"9"]],"Textura ligera con sexta."),
+    P("Imaj9–VI13–ii9–V13",[[0,"maj9"],[9,"13"],[2,"m9"],[7,"13"]],"Voicings extendidos."),
+    P("iii7–VI7–ii7–V7",[[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],"Turnaround bossa."),
+    P("I–IVmaj7–iii7–VI7",[[0,"maj7"],[5,"maj7"],[4,"m7"],[9,"7"]],"Cadena melódica.")
   ],
   soul:[
-    {name:"Neo-soul I–iii–IV–iv",steps:[[0,"maj9"],[4,"m9"],[5,"maj9"],[5,"m9"]],info:"Color neo-soul por intercambio modal: IV mayor pasa a iv menor."},
-    {name:"Soul I–vi–IV–V",steps:[[0,"maj7"],[9,"m7"],[5,"maj7"],[7,"9"]],info:"Progresión soul clásica enriquecida con séptimas y novenas."},
-    {name:"R&B ii–V–iii–vi",steps:[[2,"m9"],[7,"13"],[4,"m9"],[9,"m9"]],info:"Movimiento suave y circular, muy útil para practicar voice leading."}
+    P("Neo-soul I–iii–IV–iv",[[0,"maj9"],[4,"m9"],[5,"maj9"],[5,"m9"]],"Intercambio modal."),
+    P("Soul I–vi–IV–V",[[0,"maj7"],[9,"m7"],[5,"maj7"],[7,"9"]],"Soul clásico."),
+    P("R&B ii–V–iii–vi",[[2,"m9"],[7,"13"],[4,"m9"],[9,"m9"]],"Movimiento suave."),
+    P("Imaj9–IVmaj9",[[0,"maj9"],[5,"maj9"]],"Planos mayores."),
+    P("vi9–ii9–V13–Imaj9",[[9,"m9"],[2,"m9"],[7,"13"],[0,"maj9"]],"Cadencia extendida."),
+    P("I–♭IIImaj7–IV",[[0,"maj7"],[3,"maj7"],[5,"maj7"]],"Color modal soul."),
+    P("IVmaj7–iii7–ii7–I",[[5,"maj7"],[4,"m7"],[2,"m7"],[0,"maj7"]],"Descenso diatónico."),
+    P("I–V/vi–vi",[[0,"maj7"],[4,"7"],[9,"m7"]],"Dominante secundaria."),
+    P("ii9–V13–I6",[[2,"m9"],[7,"13"],[0,"6"]],"Resolución cálida."),
+    P("Imaj7–VII7–vi7",[[0,"maj7"],[11,"7"],[9,"m7"]],"Descenso cromático."),
+    P("I–IV–♭VII–IV",[[0,""],[5,""],[10,""],[5,""]],"Soul modal."),
+    P("vi–IV–I–V",[[9,"m7"],[5,"maj7"],[0,"maj7"],[7,"9"]],"Balada soul."),
+    P("iii–vi–ii–V",[[4,"m7"],[9,"m7"],[2,"m7"],[7,"9"]],"Ciclo diatónico."),
+    P("Imaj9–ii9–iii9–IVmaj9",[[0,"maj9"],[2,"m9"],[4,"m9"],[5,"maj9"]],"Movimiento ascendente."),
+    P("IV–V–iii–vi",[[5,"maj7"],[7,"9"],[4,"m7"],[9,"m7"]],"Cadencia gospel-soul.")
+  ],
+  rnb:[
+    P("R&B I–vi–ii–V",[[0,"maj9"],[9,"m9"],[2,"m9"],[7,"13"]],"R&B sofisticado."),
+    P("vi–IV–I–V",[[9,"m9"],[5,"maj9"],[0,"maj9"],[7,"13"]],"Balada R&B."),
+    P("ii9–V13–Imaj9",[[2,"m9"],[7,"13"],[0,"maj9"]],"Cadencia extendida."),
+    P("Imaj7–III7–vi9",[[0,"maj7"],[4,"7"],[9,"m9"]],"Secundario a vi."),
+    P("IVmaj9–iii9–vi9",[[5,"maj9"],[4,"m9"],[9,"m9"]],"Descenso suave."),
+    P("I–♭VII–IV",[[0,""],[10,""],[5,""]],"R&B modal."),
+    P("i9–♭VImaj7–♭VII13",[[0,"m9"],[8,"maj7"],[10,"13"]],"R&B menor."),
+    P("Imaj9–ii9–IVmaj9",[[0,"maj9"],[2,"m9"],[5,"maj9"]],"Color abierto."),
+    P("vi9–V13–IVmaj9",[[9,"m9"],[7,"13"],[5,"maj9"]],"Descenso."),
+    P("iii9–VI13–ii9–V13",[[4,"m9"],[9,"13"],[2,"m9"],[7,"13"]],"Turnaround R&B."),
+    P("Imaj9–♯Idim7–ii9",[[0,"maj9"],[1,"dim7"],[2,"m9"]],"Paso cromático."),
+    P("IVmaj9–iv9–Imaj9",[[5,"maj9"],[5,"m9"],[0,"maj9"]],"Subdominante menor."),
+    P("I6–iii7–IVmaj7–V13",[[0,"6"],[4,"m7"],[5,"maj7"],[7,"13"]],"Ascenso funcional."),
+    P("vi9–ii9–V13",[[9,"m9"],[2,"m9"],[7,"13"]],"Preparación de tónica."),
+    P("Imaj9–V/ii–ii9",[[0,"maj9"],[9,"7"],[2,"m9"]],"Dominante secundaria.")
+  ],
+  funk:[
+    P("i7–IV7",[[0,"m7"],[5,"7"]],"Vamp dórico clásico."),
+    P("I7–IV7",[[0,"7"],[5,"7"]],"Funk dominante."),
+    P("i9–IV13",[[0,"m9"],[5,"13"]],"Vamp extendido."),
+    P("I9–♭VII9",[[0,"9"],[10,"9"]],"Movimiento mixolidio."),
+    P("I7–♭III7–IV7",[[0,"7"],[3,"7"],[5,"7"]],"Funk cromático."),
+    P("i7–♭VII7–IV7",[[0,"m7"],[10,"7"],[5,"7"]],"Dórico/funk."),
+    P("I9–IV9–I9",[[0,"9"],[5,"9"],[0,"9"]],"Call and response."),
+    P("i11–IV13",[[0,"m11"],[5,"13"]],"Vamp moderno."),
+    P("I7–II7–IV7",[[0,"7"],[2,"7"],[5,"7"]],"Dominantes paralelos."),
+    P("i7–♭IIImaj7",[[0,"m7"],[3,"maj7"]],"Funk modal."),
+    P("I13–♭VII13",[[0,"13"],[10,"13"]],"Voicings grandes."),
+    P("i9–♭VII9–IV13",[[0,"m9"],[10,"9"],[5,"13"]],"Cadena modal."),
+    P("I7♯9–IV9",[[0,"7♯9"],[5,"9"]],"Color funk-rock."),
+    P("I9–IV9–♭VII9",[[0,"9"],[5,"9"],[10,"9"]],"Movimiento por cuartas."),
+    P("i7–IV7–♭VII7",[[0,"m7"],[5,"7"],[10,"7"]],"Vamp expandido.")
+  ],
+  gospel:[
+    P("I–IV–I/V–V",[[0,"maj7"],[5,"maj7"],[7,"7"],[7,"13"]],"Cadencia gospel."),
+    P("IV–V–iii–vi",[[5,"maj7"],[7,"9"],[4,"m7"],[9,"m7"]],"Movimiento gospel-soul."),
+    P("I–III7–vi–IV",[[0,"maj7"],[4,"7"],[9,"m7"],[5,"maj7"]],"Dominante secundaria."),
+    P("I–vi–ii–V",[[0,"maj7"],[9,"m7"],[2,"m7"],[7,"7"]],"Turnaround gospel."),
+    P("ii–V–I–VI7",[[2,"m7"],[7,"7"],[0,"maj7"],[9,"7"]],"Cierre abierto."),
+    P("I–♯Idim–ii–V",[[0,"maj7"],[1,"dim7"],[2,"m7"],[7,"7"]],"Paso disminuido."),
+    P("IV–iv–I",[[5,"maj7"],[5,"m7"],[0,"maj7"]],"Plagal menor."),
+    P("I–V/vi–vi–IV",[[0,"maj7"],[4,"7"],[9,"m7"],[5,"maj7"]],"Cadencia expansiva."),
+    P("iii–VI7–ii–V",[[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],"Cadena gospel."),
+    P("I6–IVmaj7–ii7–V13",[[0,"6"],[5,"maj7"],[2,"m7"],[7,"13"]],"Color tradicional."),
+    P("vi–IV–ii–V",[[9,"m7"],[5,"maj7"],[2,"m7"],[7,"9"]],"Cadencia menor."),
+    P("Imaj9–III7–vi9",[[0,"maj9"],[4,"7"],[9,"m9"]],"Color contemporáneo."),
+    P("IVmaj9–V13–Imaj9",[[5,"maj9"],[7,"13"],[0,"maj9"]],"Plagal/dominante."),
+    P("I–♭VII–IV–I",[[0,""],[10,""],[5,""],[0,""]],"Gospel modal."),
+    P("I–ii–iii–IV–V",[[0,"maj7"],[2,"m7"],[4,"m7"],[5,"maj7"],[7,"9"]],"Ascenso gospel.")
   ],
   blues:[
-    {name:"Jazz blues",steps:[[0,"7"],[5,"7"],[0,"7"],[0,"7"],[5,"7"],[5,"7"],[0,"7"],[9,"7"],[2,"m7"],[7,"7"],[0,"7"],[7,"7"]],info:"Blues de 12 compases con ii–V de cierre."},
-    {name:"Minor blues",steps:[[0,"m7"],[5,"m7"],[0,"m7"],[0,"m7"],[5,"m7"],[5,"m7"],[0,"m7"],[9,"m7♭5"],[2,"m7♭5"],[7,"7♭9"],[0,"m7"],[7,"7♭9"]],info:"Blues menor con dominantes alterados para resolver a i."}
+    P("Jazz blues",[[0,"7"],[5,"7"],[0,"7"],[0,"7"],[5,"7"],[5,"7"],[0,"7"],[9,"7"],[2,"m7"],[7,"7"],[0,"7"],[7,"7"]],"Blues de 12 compases con ii–V."),
+    P("Minor blues",[[0,"m7"],[5,"m7"],[0,"m7"],[0,"m7"],[5,"m7"],[5,"m7"],[0,"m7"],[9,"m7♭5"],[2,"m7♭5"],[7,"7♭9"],[0,"m7"],[7,"7♭9"]],"Blues menor."),
+    ...repeatVariants([
+      [[0,"7"],[5,"7"],[0,"7"],[7,"7"]],
+      [[0,"9"],[5,"9"],[0,"9"],[7,"9"]],
+      [[0,"13"],[5,"9"],[0,"7"],[7,"13"]],
+      [[0,"7"],[3,"7"],[5,"7"],[0,"7"]],
+      [[0,"7"],[6,"7"],[5,"7"],[0,"7"]],
+      [[0,"m7"],[5,"m7"],[10,"7"],[0,"m7"]],
+      [[0,"7♯9"],[5,"9"],[0,"7"],[7,"7♭9"]],
+      [[0,"9"],[5,"13"],[0,"9"],[7,"13"]],
+      [[0,"7"],[5,"7"],[9,"7"],[2,"7"],[7,"7"]],
+      [[0,"m7"],[3,"maj7"],[5,"m7"],[0,"m7"]],
+      [[0,"7"],[10,"7"],[5,"7"],[0,"7"]],
+      [[0,"9"],[1,"dim7"],[2,"m7"],[7,"7"],[0,"7"]],
+      [[0,"7"],[4,"7"],[5,"7"],[0,"7"]]
+    ],"Blues estudio","Variación pedagógica de blues.")
   ],
   pop:[
-    {name:"I–V–vi–IV",steps:[[0,""],[7,""],[9,"m"],[5,""]],info:"Una de las progresiones funcionales más usadas en pop."},
-    {name:"vi–IV–I–V",steps:[[9,"m"],[5,""],[0,""],[7,""]],info:"Mismos grados con sensación de inicio menor."},
-    {name:"I–vi–IV–V",steps:[[0,""],[9,"m"],[5,""],[7,""]],info:"Cadencia doo-wop / pop clásica."}
+    P("I–V–vi–IV",[[0,""],[7,""],[9,"m"],[5,""]],"Pop universal."),
+    P("vi–IV–I–V",[[9,"m"],[5,""],[0,""],[7,""]],"Inicio menor."),
+    P("I–vi–IV–V",[[0,""],[9,"m"],[5,""],[7,""]],"Doo-wop/pop."),
+    ...repeatVariants([
+      [[0,""],[5,""],[7,""],[0,""]],
+      [[0,""],[4,"m"],[5,""],[7,""]],
+      [[9,"m"],[2,"m"],[5,""],[0,""]],
+      [[0,""],[7,""],[5,""],[7,""]],
+      [[0,""],[2,"m"],[5,""],[7,""]],
+      [[9,"m"],[5,""],[0,""],[7,""]],
+      [[0,""],[3,""],[5,""],[0,""]],
+      [[0,""],[10,""],[5,""],[0,""]],
+      [[0,""],[4,"m"],[9,"m"],[5,""]],
+      [[5,""],[7,""],[4,"m"],[9,"m"]],
+      [[0,""],[9,"m"],[2,"m"],[7,""]],
+      [[9,"m"],[7,""],[5,""],[7,""]]
+    ],"Pop estudio","Variación pedagógica de armonía pop.")
+  ],
+  cueca:[
+    P("Cueca I–V–I",[[0,""],[7,"7"],[0,""]],"Patrón pedagógico básico de cueca."),
+    P("Cueca I–IV–V–I",[[0,""],[5,""],[7,"7"],[0,""]],"Cadencia tonal frecuente como ejercicio."),
+    ...repeatVariants([
+      [[0,""],[7,"7"],[0,""],[5,""],[7,"7"],[0,""]],
+      [[0,""],[5,""],[0,""],[7,"7"],[0,""]],
+      [[0,""],[9,"m"],[5,""],[7,"7"],[0,""]],
+      [[0,""],[4,"m"],[5,""],[7,"7"],[0,""]],
+      [[5,""],[0,""],[7,"7"],[0,""]],
+      [[0,""],[2,"m"],[7,"7"],[0,""]],
+      [[0,""],[5,""],[2,"m"],[7,"7"],[0,""]],
+      [[0,""],[10,""],[5,""],[7,"7"],[0,""]],
+      [[0,""],[3,""],[5,""],[7,"7"],[0,""]],
+      [[9,"m"],[5,""],[0,""],[7,"7"],[0,""]],
+      [[0,""],[7,""],[5,""],[7,"7"],[0,""]],
+      [[0,"6"],[5,""],[7,"7"],[0,"6"]],
+      [[0,""],[1,"dim7"],[2,"m"],[7,"7"],[0,""]]
+    ],"Cueca estudio","Ejercicio tonal inspirado en recursos armónicos de cueca; no corresponde a una transcripción específica.")
+  ],
+  zamba:[
+    P("Zamba i–VII–VI–V",[[0,"m"],[10,""],[8,""],[7,"7"]],"Cadencia menor pedagógica para zamba."),
+    P("Zamba i–iv–V–i",[[0,"m"],[5,"m"],[7,"7"],[0,"m"]],"Cadencia tonal menor."),
+    ...repeatVariants([
+      [[0,"m"],[8,""],[3,""],[7,"7"]],
+      [[0,"m"],[5,"m"],[10,""],[7,"7"]],
+      [[0,"m"],[3,""],[8,""],[7,"7"]],
+      [[0,"m"],[10,""],[5,"m"],[7,"7"]],
+      [[0,"m"],[8,""],[10,""],[7,"7"]],
+      [[0,"m"],[3,""],[5,"m"],[7,"7"]],
+      [[0,"m"],[2,"m7♭5"],[7,"7♭9"],[0,"m"]],
+      [[0,"m"],[5,"m"],[3,""],[7,"7"]],
+      [[0,"m"],[10,""],[3,""],[8,""],[7,"7"]],
+      [[0,"m"],[8,""],[5,"m"],[7,"7"]],
+      [[0,"m"],[3,""],[10,""],[7,"7"]],
+      [[0,"m"],[5,"m"],[8,""],[7,"7"]],
+      [[0,"m"],[11,"dim7"],[0,"m"],[7,"7"]]
+    ],"Zamba estudio","Ejercicio tonal inspirado en recursos de zamba argentina; no transcripción específica.")
+  ],
+  folk_latam:[
+    ...repeatVariants([
+      [[0,""],[5,""],[7,"7"],[0,""]],
+      [[0,"m"],[5,"m"],[7,"7"],[0,"m"]],
+      [[0,""],[7,""],[9,"m"],[5,""]],
+      [[9,"m"],[5,""],[0,""],[7,""]],
+      [[0,""],[4,"m"],[5,""],[7,""]],
+      [[0,"m"],[8,""],[10,""],[7,"7"]],
+      [[0,""],[2,"m"],[5,""],[7,""]],
+      [[0,""],[10,""],[5,""],[0,""]],
+      [[0,"m"],[3,""],[8,""],[7,"7"]],
+      [[5,""],[0,""],[7,""],[0,""]],
+      [[0,""],[9,"m"],[2,"m"],[7,""]],
+      [[0,"m"],[5,"m"],[3,""],[7,"7"]],
+      [[0,""],[1,"dim7"],[2,"m"],[7,"7"]],
+      [[0,""],[3,""],[5,""],[7,""]],
+      [[0,"m"],[10,""],[8,""],[7,"7"]]
+    ],"Folclor latino estudio","Patrón pedagógico genérico de armonía tonal/modal latinoamericana.")
   ],
   modulation:[
-    {name:"ii–V hacia ♭III",steps:[[5,"m7"],[10,"7"],[3,"maj7"]],info:"Modulación por ii–V a un centro un tono y medio por encima."},
-    {name:"ii–V hacia III",steps:[[6,"m7"],[11,"7"],[4,"maj7"]],info:"Cadena ii–V dirigida al centro mayor a distancia de tercera."},
-    {name:"Dominantes por quintas",steps:[[4,"7"],[9,"7"],[2,"7"],[7,"7"],[0,"maj7"]],info:"Cadena de dominantes descendiendo por quintas hasta la tónica."}
+    P("ii–V hacia ♭III",[[5,"m7"],[10,"7"],[3,"maj7"]],"Modulación por ii–V."),
+    P("ii–V hacia III",[[6,"m7"],[11,"7"],[4,"maj7"]],"Modulación por ii–V."),
+    P("Dominantes por quintas",[[4,"7"],[9,"7"],[2,"7"],[7,"7"],[0,"maj7"]],"Cadena de dominantes."),
+    ...repeatVariants([
+      [[2,"m7"],[7,"7"],[0,"maj7"],[3,"m7"],[8,"7"],[1,"maj7"]],
+      [[0,"maj7"],[1,"7"],[6,"maj7"]],
+      [[0,"maj7"],[11,"7"],[4,"maj7"]],
+      [[0,"maj7"],[6,"7"],[11,"maj7"]],
+      [[0,"maj7"],[4,"7"],[9,"m7"]],
+      [[0,"m7"],[7,"7"],[5,"maj7"]],
+      [[0,"maj7"],[10,"7"],[3,"maj7"]],
+      [[0,"maj7"],[2,"7"],[7,"maj7"]],
+      [[0,"maj7"],[9,"7"],[2,"m7"],[7,"7"],[0,"maj7"]],
+      [[0,"m7"],[2,"m7♭5"],[7,"7♭9"],[0,"m"]],
+      [[0,"maj7"],[3,"7"],[8,"maj7"],[11,"7"],[4,"maj7"]],
+      [[0,"maj7"],[5,"m7"],[10,"7"],[3,"maj7"]]
+    ],"Modulación estudio","Ejercicio de modulación funcional.")
   ]
+};
+
+const COMPOSERS={
+  stevie:{
+    name:"Stevie Wonder",
+    songs:[
+      {name:"Isn't She Lovely · estudio",key:"Mi mayor",steps:[[9,"m7"],[2,"9"],[7,"13"],[0,"maj9"]],info:"Referencia armónica pedagógica. Hooktheory sitúa el tema en Mi mayor y destaca acordes extendidos, inversiones, secundarios y alterados; no es una transcripción compás por compás."},
+      {name:"Sir Duke · estudio",key:"Si mayor",steps:[[0,"maj7"],[5,"maj7"],[7,"13"],[0,"maj7"]],info:"Referencia pedagógica. Hooktheory sitúa el tema en Si mayor y señala acordes prestados, sustitución de tritono, séptimas y dominantes secundarios; no es transcripción exacta."},
+      {name:"Superstition · estudio",key:"Mi♭ dórico",steps:[[0,"m7"],[5,"7"],[0,"m7"],[10,"7"]],info:"Referencia modal pedagógica. Hooktheory identifica Mi♭ dórico y uso de séptimas, extensiones y recursos alterados; no es transcripción exacta."},
+      {name:"I Wish · estudio",key:"Referencia",steps:[[0,"m7"],[5,"7"],[10,"7"],[0,"m7"]],info:"Vamp pedagógico de funk/soul asociado al lenguaje armónico de Stevie Wonder; no transcripción exacta."},
+      {name:"You Are the Sunshine of My Life · estudio",key:"Referencia",steps:[[0,"maj7"],[4,"7"],[9,"m7"],[2,"m7"],[7,"7"]],info:"Cadena funcional pedagógica inspirada en el lenguaje soul/pop de Stevie Wonder; no transcripción exacta."},
+      {name:"My Cherie Amour · estudio",key:"Referencia",steps:[[0,"maj7"],[2,"m7"],[7,"7"],[4,"m7"],[9,"7"]],info:"Referencia pedagógica de conducción funcional; no transcripción exacta."},
+      {name:"Overjoyed · estudio",key:"Referencia",steps:[[0,"maj9"],[4,"m9"],[5,"maj9"],[7,"13"]],info:"Textura pedagógica con extensiones; no transcripción exacta."},
+      {name:"Golden Lady · estudio",key:"Referencia",steps:[[0,"maj9"],[3,"maj7"],[5,"maj9"],[7,"13"]],info:"Referencia pedagógica de color cromático; no transcripción exacta."},
+      {name:"Higher Ground · estudio",key:"Referencia",steps:[[0,"m7"],[5,"7"],[0,"m7"],[10,"7"]],info:"Vamp pedagógico de funk modal; no transcripción exacta."},
+      {name:"For Once in My Life · estudio",key:"Referencia",steps:[[0,"maj7"],[9,"7"],[2,"m7"],[7,"7"]],info:"Turnaround pedagógico de soul/jazz-pop; no transcripción exacta."}
+    ]
+  }
 };
 
 function chordBySym(sym){return CHORDS.find(c=>c.sym===sym)||CHORDS[0]}
@@ -1587,6 +1837,7 @@ function initHarmony(){
   updateProgressionTypes();
   updateHarmonyDisplay();
   updateChordPositions();
+  updateComposerSongs();
 }
 function updateInversions(){
   const c=CHORDS[Number(chordType.value)]||CHORDS[0],prev=Number(chordInversion.value)||0;
@@ -1633,6 +1884,54 @@ async function playArpeggioMidis(midis){
     if(instrument)instrument.start({note:m,velocity:88,time:st,duration:.75});
     else scheduleSineNote(m,st,.75,.16);
   });
+}
+function updateComposerSongs(){
+  const c=COMPOSERS[composerSelect.value];
+  composerSong.innerHTML="";
+  composerProgressionLine.innerHTML="";
+  composerInfo.textContent="";
+  if(!c){
+    composerSong.disabled=true;
+    playComposerProgressionBtn.disabled=true;
+    const o=document.createElement("option");o.value="";o.textContent="Selecciona un compositor";composerSong.appendChild(o);
+    return;
+  }
+  composerSong.disabled=false;
+  playComposerProgressionBtn.disabled=false;
+  c.songs.forEach((song,i)=>{const o=document.createElement("option");o.value=i;o.textContent=song.name;composerSong.appendChild(o)});
+  composerSong.value="0";
+  renderComposerProgression();
+}
+function composerChordData(){
+  const c=COMPOSERS[composerSelect.value];
+  if(!c)return [];
+  const song=c.songs[Number(composerSong.value)||0];
+  if(!song)return [];
+  const tonic=NOTE_INDEX[chordRoot.value];
+  return song.steps.map(([off,sym])=>{const pc=(tonic+off)%12,cc=chordBySym(sym);return {pc,c:cc,label:AMERICAN_NAMES[pc]+sym}});
+}
+function renderComposerProgression(){
+  composerProgressionLine.innerHTML="";
+  const c=COMPOSERS[composerSelect.value];
+  if(!c){composerInfo.textContent="";return}
+  const song=c.songs[Number(composerSong.value)||0];
+  if(!song){composerInfo.textContent="";return}
+  composerChordData().forEach(x=>{const el=document.createElement("span");el.className="progression-chord";el.textContent=x.label;composerProgressionLine.appendChild(el)});
+  composerInfo.textContent=c.name+" · "+song.name+" · "+song.info+" · Se transpone tomando "+chordRoot.value+" como centro de estudio.";
+}
+async function playComposerProgression(){
+  try{
+    await ensureAudio();
+    let instrument=null;
+    try{instrument=await getSelectedInstrument()}catch(e){instrument=null}
+    const data=composerChordData(),baseOct=Math.max(2,Number(chordOctave.value)||3),start=audioCtx.currentTime+.08,step=1.35;
+    data.forEach((x,i)=>{
+      const midis=chordMidis(NOTE_NAMES[x.pc],x.c,0,baseOct),t=start+i*step;
+      midis.forEach(m=>instrument?instrument.start({note:m,velocity:82,time:t,duration:1.05}):scheduleSineNote(m,t,1.05,.10));
+      setTimeout(()=>[...composerProgressionLine.children].forEach((el,j)=>el.style.outline=j===i?"2px solid var(--color-primary)":""),Math.max(0,(t-audioCtx.currentTime)*1000));
+    });
+    setTimeout(()=>[...composerProgressionLine.children].forEach(el=>el.style.outline=""),(data.length*step+1)*1000);
+  }catch(err){statusEl.textContent="No se pudo reproducir la referencia: "+err.message}
 }
 function updateProgressionTypes(){
   const arr=PROGRESSIONS[progressionStyle.value]||[];
@@ -1723,7 +2022,7 @@ document.addEventListener("click",e=>{
 });
 
 
-chordRoot.addEventListener("change",()=>{updateHarmonyDisplay();updateChordPositions();renderProgression()});
+chordRoot.addEventListener("change",()=>{updateHarmonyDisplay();updateChordPositions();renderProgression();renderComposerProgression()});
 chordType.addEventListener("change",()=>{updateInversions();updateHarmonyDisplay();updateChordPositions()});
 chordInversion.addEventListener("change",()=>{updateHarmonyDisplay();updateChordPositions()});
 chordPosition.addEventListener("change",renderChordVisuals);
@@ -1732,6 +2031,9 @@ chordOctave.addEventListener("change",()=>{updateHarmonyDisplay();updateChordPos
 playChordBtn.addEventListener("click",()=>playChordMidis(chordMidis()));
 playArpeggioBtn.addEventListener("click",()=>playArpeggioMidis(chordMidis()));
 progressionStyle.addEventListener("change",updateProgressionTypes);
+composerSelect.addEventListener("change",updateComposerSongs);
+composerSong.addEventListener("change",renderComposerProgression);
+playComposerProgressionBtn.addEventListener("click",playComposerProgression);
 progressionType.addEventListener("change",renderProgression);
 playProgressionBtn.addEventListener("click",playSelectedProgression);
 
