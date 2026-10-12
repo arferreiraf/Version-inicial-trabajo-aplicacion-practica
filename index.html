@@ -95,9 +95,66 @@ main{
   text-shadow:0 0 26px rgba(255,59,212,.14);
 }
 .hero-copy p{margin:0}
-.theme-control{min-width:0;width:100%;justify-self:end}
-.theme-control label{margin-bottom:5px}
-#themeSelect{min-width:0;width:100%}
+.theme-control{min-width:0;width:100%;justify-self:end;position:relative}
+.theme-control>label{margin-bottom:5px}
+.theme-picker-btn{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-height:44px;
+  padding:9px 12px;
+  border-radius:12px;
+  border:1px solid color-mix(in oklab,var(--color-base-content) 22%,transparent);
+  background:var(--color-base-200);
+  color:var(--color-base-content);
+}
+.theme-picker-current{display:flex;align-items:center;gap:10px;min-width:0}
+.theme-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.theme-preview{
+  width:34px;height:26px;flex:0 0 auto;
+  border-radius:8px;
+  padding:4px;
+  background:var(--color-base-100);
+  border:1px solid color-mix(in oklab,var(--color-base-content) 20%,transparent);
+  display:grid;grid-template-columns:1fr 1fr;gap:3px;
+  box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--color-base-300) 70%,transparent);
+}
+.theme-preview i{display:block;border-radius:999px}
+.theme-preview i:nth-child(1){background:var(--color-primary)}
+.theme-preview i:nth-child(2){background:var(--color-secondary)}
+.theme-preview i:nth-child(3){background:var(--color-accent)}
+.theme-preview i:nth-child(4){background:var(--color-neutral)}
+.theme-menu{
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  z-index:30;
+  width:min(320px,85vw);
+  max-height:420px;
+  overflow:auto;
+  padding:8px;
+  border-radius:14px;
+  background:var(--color-base-100);
+  border:1px solid color-mix(in oklab,var(--color-base-content) 18%,transparent);
+  box-shadow:0 18px 50px rgba(0,0,0,.35);
+}
+.theme-menu[hidden]{display:none}
+.theme-option{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  border-radius:10px;
+  background:transparent;
+  color:var(--color-base-content);
+  text-align:left;
+  border:0;
+}
+.theme-option:hover{background:var(--color-base-200)}
+.theme-option.active{outline:1px solid var(--color-primary)}
 .voice-mic{display:flex;justify-content:flex-end;margin-bottom:8px}
 .voice-mic .primary{min-width:200px}
 h2{font-size:1.05rem;margin:0 0 16px;color:#f6ecff;letter-spacing:.03em}
@@ -294,44 +351,12 @@ select:focus,input:focus{
       </div>
     </section>
     <div class="theme-control card">
-      <label for="themeSelect">Tema DaisyUI</label>
-      <select id="themeSelect" class="select select-bordered select-sm">
-        <option value="light">light</option>
-        <option value="dark">dark</option>
-        <option value="cupcake">cupcake</option>
-        <option value="bumblebee">bumblebee</option>
-        <option value="emerald">emerald</option>
-        <option value="corporate">corporate</option>
-        <option value="synthwave" selected>synthwave</option>
-        <option value="retro">retro</option>
-        <option value="cyberpunk">cyberpunk</option>
-        <option value="valentine">valentine</option>
-        <option value="halloween">halloween</option>
-        <option value="garden">garden</option>
-        <option value="forest">forest</option>
-        <option value="aqua">aqua</option>
-        <option value="lofi">lofi</option>
-        <option value="pastel">pastel</option>
-        <option value="fantasy">fantasy</option>
-        <option value="wireframe">wireframe</option>
-        <option value="black">black</option>
-        <option value="luxury">luxury</option>
-        <option value="dracula">dracula</option>
-        <option value="cmyk">cmyk</option>
-        <option value="autumn">autumn</option>
-        <option value="business">business</option>
-        <option value="acid">acid</option>
-        <option value="lemonade">lemonade</option>
-        <option value="night">night</option>
-        <option value="coffee">coffee</option>
-        <option value="winter">winter</option>
-        <option value="dim">dim</option>
-        <option value="nord">nord</option>
-        <option value="sunset">sunset</option>
-        <option value="caramellatte">caramellatte</option>
-        <option value="abyss">abyss</option>
-        <option value="silk">silk</option>
-      </select>
+      <label>Tema DaisyUI</label>
+      <button id="themePickerBtn" class="theme-picker-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="theme-picker-current" id="themePickerCurrent"></span>
+        <span aria-hidden="true">▾</span>
+      </button>
+      <div id="themeMenu" class="theme-menu" role="listbox" hidden></div>
     </div>
   </div>
 
@@ -586,7 +611,8 @@ targetDisplay=$("targetDisplay"),playTone=$("playTone"),resetScore=$("resetScore
 accuracyEl=$("accuracy"),stableTimeEl=$("stableTime"),bestTimeEl=$("bestTime"),
 scaleRoot=$("scaleRoot"),scaleType=$("scaleType"),scaleNotes=$("scaleNotes"),scaleMeta=$("scaleMeta"),
 playScaleUp=$("playScaleUp"),playScaleDown=$("playScaleDown"),playScaleBoth=$("playScaleBoth"),
-fretboard=$("fretboard"),fretboardMode=$("fretboardMode"),themeSelect=$("themeSelect"),scaleOctaves=$("scaleOctaves");
+fretboard=$("fretboard"),fretboardMode=$("fretboardMode"),scaleOctaves=$("scaleOctaves"),
+themePickerBtn=$("themePickerBtn"),themePickerCurrent=$("themePickerCurrent"),themeMenu=$("themeMenu");
 
 let audioCtx,analyser,source,stream,running=false,buffer;
 let stableStart=null,bestTime=0,totalFrames=0,goodFrames=0;
@@ -845,17 +871,49 @@ async function playReference(){
   }catch(err){statusEl.textContent="No se pudo reproducir la referencia: "+err.message}
 }
 const DAISY_THEMES=["light","dark","cupcake","bumblebee","emerald","corporate","synthwave","retro","cyberpunk","valentine","halloween","garden","forest","aqua","lofi","pastel","fantasy","wireframe","black","luxury","dracula","cmyk","autumn","business","acid","lemonade","night","coffee","winter","dim","nord","sunset","caramellatte","abyss","silk"];
+function themePreviewHTML(theme,label){
+  return '<span class="theme-preview" data-theme="'+theme+'"><i></i><i></i><i></i><i></i></span><span class="theme-name">'+(label||theme)+'</span>';
+}
+function renderThemeMenu(activeTheme){
+  if(!themeMenu)return;
+  themeMenu.innerHTML="";
+  DAISY_THEMES.forEach(theme=>{
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="theme-option"+(theme===activeTheme?" active":"");
+    b.setAttribute("role","option");
+    b.setAttribute("aria-selected",theme===activeTheme?"true":"false");
+    b.innerHTML=themePreviewHTML(theme,theme);
+    b.addEventListener("click",()=>{
+      applyTheme(theme);
+      themeMenu.hidden=true;
+      themePickerBtn.setAttribute("aria-expanded","false");
+    });
+    themeMenu.appendChild(b);
+  });
+}
 function applyTheme(theme){
   const safe=DAISY_THEMES.includes(theme)?theme:"synthwave";
   document.documentElement.setAttribute("data-theme",safe);
-  if(themeSelect)themeSelect.value=safe;
+  if(themePickerCurrent)themePickerCurrent.innerHTML=themePreviewHTML(safe,safe);
+  renderThemeMenu(safe);
   try{localStorage.setItem("afinador-theme",safe)}catch(e){}
   rebuildHexBackground();
 }
 let savedTheme="synthwave";
 try{savedTheme=localStorage.getItem("afinador-theme")||"synthwave"}catch(e){}
 applyTheme(savedTheme);
-themeSelect.addEventListener("change",()=>applyTheme(themeSelect.value));
+themePickerBtn.addEventListener("click",()=>{
+  const willOpen=themeMenu.hidden;
+  themeMenu.hidden=!willOpen;
+  themePickerBtn.setAttribute("aria-expanded",willOpen?"true":"false");
+});
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".theme-control")){
+    themeMenu.hidden=true;
+    themePickerBtn.setAttribute("aria-expanded","false");
+  }
+});
 
 startBtn.addEventListener("click",toggleMic);
 targetNote.addEventListener("change",updateTarget);
