@@ -368,11 +368,20 @@ select:focus,input:focus{
   width:100%;
   height:auto;
   border-radius:16px;
-  background:linear-gradient(180deg,
-    color-mix(in oklab,var(--color-base-300) 94%,var(--color-base-100)),
-    color-mix(in oklab,var(--color-base-200) 92%,var(--color-base-300)));
-  border:1px solid color-mix(in oklab,var(--color-base-content) 14%,transparent);
-  box-shadow:inset 0 0 26px rgba(122,92,255,.08),0 0 24px rgba(255,59,212,.05);
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 100%),
+    repeating-linear-gradient(
+      3deg,
+      rgba(255,255,255,.018) 0 2px,
+      rgba(0,0,0,.018) 2px 4px,
+      transparent 4px 11px
+    ),
+    linear-gradient(180deg,#5a351f 0%,#6b4128 48%,#4b2b1a 100%);
+  border:1px solid #8a5a38;
+  box-shadow:
+    inset 0 0 28px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 10px 28px rgba(0,0,0,.18);
 }
 .fret-line{stroke:rgba(255,255,255,.22);stroke-width:1}
 .fret-nut{stroke:#ffe75f;stroke-width:4}
@@ -845,7 +854,7 @@ function renderFretboard(activeMidi=null){
   const mode=fretboardMode ? fretboardMode.value : "active";
   const preferred=activeMidi!==null ? findPreferredGuitarPosition(activeMidi) : null;
 
-  const bg=svgEl("rect",{x:left,y:top,width:boardW,height:boardH,rx:12,fill:"var(--color-base-300)",stroke:"color-mix(in oklab,var(--color-base-content) 14%,transparent)"});
+  const bg=svgEl("rect",{x:left,y:top,width:boardW,height:boardH,rx:12,fill:"#5a351f",stroke:"#8a5a38"});
   fretboard.appendChild(bg);
 
   for(let f=0;f<=24;f++){
