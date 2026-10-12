@@ -49,11 +49,26 @@ body{
 main{
   width:min(calc(100vw - 100px),1180px);
   margin:0 auto;
-  padding:28px 0 40px;
+  padding:110px 0 40px;
   position:relative;
   z-index:1
 }
-.dashboard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.dashboard{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-areas:
+    "hero hero"
+    "target voice"
+    "scales scales"
+    "help help";
+  gap:18px;
+  align-items:stretch
+}
+.hero{grid-area:hero}
+.target-card{grid-area:target}
+.voice-card{grid-area:voice}
+.scales{grid-area:scales}
+.help{grid-area:help}
 .card{
   background:color-mix(in oklab,var(--color-base-200) 84%,transparent);
   border:1px solid color-mix(in oklab,var(--color-primary) 28%,transparent);
@@ -80,7 +95,6 @@ main{
   0%,100%{transform:translateX(-38%)}
   50%{transform:translateX(38%)}
 }
-.hero,.scales,.help{grid-column:1/-1}
 .hero{display:block}
 .hero-copy{min-width:0;padding-right:8px}
 .hero-copy h1{
@@ -169,6 +183,8 @@ main{
 }
 .theme-option:hover{background:var(--color-base-200)}
 .theme-option.active{outline:1px solid var(--color-primary)}
+.target-card,.voice-card{min-height:420px}
+.voice-card{display:flex;flex-direction:column}
 .voice-mic{display:flex;justify-content:flex-end;margin-bottom:8px}
 .voice-mic .primary{min-width:200px}
 h2{font-size:1.05rem;margin:0 0 16px;color:#f6ecff;letter-spacing:.03em}
@@ -338,14 +354,22 @@ select:focus,input:focus{
   .theme-control{top:12px;right:12px;width:230px}
 }
 @media(max-width:900px){
-  main{width:min(calc(100vw - 32px),860px);padding:18px 0 28px}
-  .dashboard{grid-template-columns:1fr}
-  .hero,.scales,.help{grid-column:auto}
+  main{width:min(calc(100vw - 32px),860px);padding:96px 0 28px}
+  .dashboard{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "hero"
+      "target"
+      "voice"
+      "scales"
+      "help";
+  }
+  .target-card,.voice-card{min-height:0}
   .primary{width:100%}
   .scales-layout{grid-template-columns:1fr}
 }
 @media(max-width:560px){
-  .theme-control{position:relative;top:auto;right:auto;width:100%;margin:10px auto 0}
+  .theme-control{position:relative;top:auto;right:auto;width:calc(100vw - 20px);margin:10px auto 0}
   main{width:calc(100vw - 20px);padding-top:14px}
   .grid,.stats{grid-template-columns:1fr}
   .card{padding:18px}
