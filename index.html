@@ -3,39 +3,242 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>Afinador vocal en tiempo real</title>
+<title>Entrenador de afinación vocal</title>
 <style>
-  :root { color-scheme: dark; }
-  body { margin:0;font-family:system-ui,-apple-system,sans-serif;background:#111827;color:#f9fafb;display:flex;min-height:100vh;align-items:center;justify-content:center; }
-  .card { width:min(92vw,560px);background:#1f2937;border-radius:24px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35); }
-  h1{margin:0 0 8px;font-size:1.6rem} p{color:#cbd5e1}
-  button{width:100%;padding:16px;border:0;border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;background:#f9fafb;color:#111827}
-  .note{font-size:5rem;font-weight:800;text-align:center;margin:18px 0 0}.freq{font-size:1.6rem;text-align:center;color:#e5e7eb}.cents{font-size:1.2rem;text-align:center;margin-top:6px}
-  .meter{position:relative;height:18px;background:#374151;border-radius:999px;margin-top:20px;overflow:hidden}.center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#fff;opacity:.8}
-  .dot{position:absolute;top:2px;width:14px;height:14px;border-radius:50%;background:#f9fafb;transform:translateX(-50%);left:50%;transition:left .08s linear}
-  .status{margin-top:18px;font-size:.95rem;color:#94a3b8;text-align:center}.small{font-size:.85rem;color:#94a3b8;line-height:1.4}
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#111827;color:#f9fafb}
+main{max-width:760px;margin:0 auto;padding:18px}
+.card{background:#1f2937;border-radius:20px;padding:18px;margin-bottom:14px}
+h1{margin:0 0 6px;font-size:1.6rem}h2{font-size:1rem;margin:0 0 12px;color:#e5e7eb}
+p,.muted{color:#94a3b8}
+button,select,input{font:inherit}
+button{border:0;border-radius:12px;padding:13px 16px;font-weight:700;cursor:pointer}
+.primary{width:100%;background:#f9fafb;color:#111827}
+.secondary{background:#374151;color:#f9fafb}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:.85rem;color:#cbd5e1;margin-bottom:6px}
+select,input{width:100%;padding:11px;border-radius:10px;border:1px solid #4b5563;background:#111827;color:#f9fafb}
+.note{text-align:center;font-size:5rem;font-weight:800;line-height:1;margin-top:12px}
+.freq,.cents{text-align:center}.freq{font-size:1.45rem}.cents{font-size:1.1rem;color:#cbd5e1}
+.meter{position:relative;height:22px;background:#374151;border-radius:999px;margin:18px 0 8px;overflow:hidden}
+.center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#fff}
+.dot{position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#f9fafb;left:50%;transform:translateX(-50%);transition:left .07s linear}
+.labels{display:flex;justify-content:space-between;font-size:.75rem;color:#94a3b8}
+.status{text-align:center;font-weight:700;margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stat{background:#111827;border-radius:12px;padding:12px;text-align:center}
+.stat b{display:block;font-size:1.25rem}.stat span{font-size:.75rem;color:#94a3b8}
+.target{font-size:2rem;font-weight:800;text-align:center}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1;min-width:140px}
+.good{color:#86efac}.warn{color:#facc15}.bad{color:#fca5a5}
+@media(max-width:520px){.grid,.stats{grid-template-columns:1fr}.note{font-size:4rem}}
 </style>
 </head>
 <body>
-<div class="card">
-<h1>Afinador vocal</h1>
-<p>Canta una nota sostenida. El sistema estima frecuencia, nota y desviación en cents.</p>
-<button id="startBtn">Activar micrófono</button>
-<div class="note" id="note">—</div>
-<div class="freq" id="freq">— Hz</div>
-<div class="cents" id="cents">— cents</div>
-<div class="meter"><div class="center"></div><div class="dot" id="dot"></div></div>
-<div class="status" id="status">Micrófono inactivo</div>
-<p class="small">Referencia: La4 = 440 Hz. Para mayor estabilidad, canta una vocal sostenida como “aaaa”.</p>
-</div>
+<main>
+  <div class="card">
+    <h1>Entrenador de afinación vocal</h1>
+    <p>Detecta tu nota y entrena contra una nota objetivo.</p>
+    <button class="primary" id="startBtn">Activar micrófono</button>
+  </div>
+
+  <div class="card">
+    <h2>Objetivo</h2>
+    <div class="grid">
+      <div>
+        <label for="targetNote">Nota</label>
+        <select id="targetNote">
+          <option>Do</option><option>Do♯</option><option>Re</option><option>Re♯</option>
+          <option>Mi</option><option>Fa</option><option>Fa♯</option><option selected>Sol</option>
+          <option>Sol♯</option><option>La</option><option>La♯</option><option>Si</option>
+        </select>
+      </div>
+      <div>
+        <label for="targetOctave">Octava</label>
+        <select id="targetOctave">
+          <option>2</option><option selected>3</option><option>4</option><option>5</option>
+        </select>
+      </div>
+    </div>
+    <div class="target" id="targetDisplay">Sol3 · 196.00 Hz</div>
+    <div class="actions">
+      <button class="secondary" id="playTone">▶ Escuchar referencia</button>
+      <button class="secondary" id="resetScore">Reiniciar ejercicio</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Tu voz</h2>
+    <div class="note" id="note">—</div>
+    <div class="freq" id="freq">— Hz</div>
+    <div class="cents" id="cents">— cents respecto al objetivo</div>
+    <div class="meter">
+      <div class="center"></div>
+      <div class="dot" id="dot"></div>
+    </div>
+    <div class="labels"><span>-50 cents</span><span>0</span><span>+50 cents</span></div>
+    <div class="status" id="status">Micrófono inactivo</div>
+
+    <div class="stats">
+      <div class="stat"><b id="accuracy">—</b><span>Precisión</span></div>
+      <div class="stat"><b id="stableTime">0.0 s</b><span>Tiempo afinado</span></div>
+      <div class="stat"><b id="bestTime">0.0 s</b><span>Mejor racha</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Cómo entrenar</h2>
+    <p class="muted">Elige una nota, escucha la referencia y luego cántala con una vocal sostenida. El cronómetro avanza mientras estés dentro de ±10 cents. Dentro de ±5 cents se considera muy afinado.</p>
+  </div>
+</main>
+
 <script>
 const NOTE_NAMES=["Do","Do♯","Re","Re♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];
-const startBtn=document.getElementById("startBtn"),noteEl=document.getElementById("note"),freqEl=document.getElementById("freq"),centsEl=document.getElementById("cents"),dotEl=document.getElementById("dot"),statusEl=document.getElementById("status");
+const NOTE_INDEX=Object.fromEntries(NOTE_NAMES.map((n,i)=>[n,i]));
+
+const $=id=>document.getElementById(id);
+const startBtn=$("startBtn"),noteEl=$("note"),freqEl=$("freq"),centsEl=$("cents"),
+dotEl=$("dot"),statusEl=$("status"),targetNote=$("targetNote"),targetOctave=$("targetOctave"),
+targetDisplay=$("targetDisplay"),playTone=$("playTone"),resetScore=$("resetScore"),
+accuracyEl=$("accuracy"),stableTimeEl=$("stableTime"),bestTimeEl=$("bestTime");
+
 let audioCtx,analyser,source,stream,running=false,buffer;
-function frequencyToNote(freq){const midi=69+12*Math.log2(freq/440),nearest=Math.round(midi),ref=440*Math.pow(2,(nearest-69)/12),cents=1200*Math.log2(freq/ref),name=NOTE_NAMES[(nearest%12+12)%12],octave=Math.floor(nearest/12)-1;return{name,octave,ref,cents}}
-function autoCorrelate(buf,sampleRate){let SIZE=buf.length,rms=0;for(let i=0;i<SIZE;i++)rms+=buf[i]*buf[i];rms=Math.sqrt(rms/SIZE);if(rms<0.01)return-1;let r1=0,r2=SIZE-1,thres=.2;for(let i=0;i<SIZE/2;i++){if(Math.abs(buf[i])<thres){r1=i;break}}for(let i=1;i<SIZE/2;i++){if(Math.abs(buf[SIZE-i])<thres){r2=SIZE-i;break}}buf=buf.slice(r1,r2);SIZE=buf.length;const c=new Array(SIZE).fill(0);for(let i=0;i<SIZE;i++)for(let j=0;j<SIZE-i;j++)c[i]+=buf[j]*buf[j+i];let d=0;while(d+1<SIZE&&c[d]>c[d+1])d++;let maxval=-1,maxpos=-1;for(let i=d;i<SIZE;i++){if(c[i]>maxval){maxval=c[i];maxpos=i}}if(maxpos<=0)return-1;let T0=maxpos;if(T0>0&&T0<SIZE-1){const x1=c[T0-1],x2=c[T0],x3=c[T0+1],a=(x1+x3-2*x2)/2,b=(x3-x1)/2;if(a!==0)T0=T0-b/(2*a)}const freq=sampleRate/T0;if(freq<70||freq>1200)return-1;return freq}
-function update(){if(!running)return;analyser.getFloatTimeDomainData(buffer);const freq=autoCorrelate(buffer,audioCtx.sampleRate);if(freq>0){const info=frequencyToNote(freq);noteEl.textContent=info.name+info.octave;freqEl.textContent=freq.toFixed(2)+" Hz";centsEl.textContent=(info.cents>=0?"+":"")+info.cents.toFixed(1)+" cents";const clamped=Math.max(-50,Math.min(50,info.cents));dotEl.style.left=(50+clamped)+"%";statusEl.textContent=Math.abs(info.cents)<5?"Muy afinado":info.cents<0?"Un poco bajo":"Un poco alto"}else{noteEl.textContent="—";freqEl.textContent="— Hz";centsEl.textContent="— cents";statusEl.textContent="Esperando una nota estable…";dotEl.style.left="50%"}requestAnimationFrame(update)}
-startBtn.addEventListener("click",async()=>{try{if(!running){stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});audioCtx=new(window.AudioContext||window.webkitAudioContext)();analyser=audioCtx.createAnalyser();analyser.fftSize=4096;buffer=new Float32Array(analyser.fftSize);source=audioCtx.createMediaStreamSource(stream);source.connect(analyser);running=true;startBtn.textContent="Detener";statusEl.textContent="Micrófono activo";update()}else{running=false;if(stream)stream.getTracks().forEach(t=>t.stop());if(audioCtx)await audioCtx.close();startBtn.textContent="Activar micrófono";statusEl.textContent="Micrófono inactivo";noteEl.textContent="—";freqEl.textContent="— Hz";centsEl.textContent="— cents";dotEl.style.left="50%"}}catch(err){console.error(err);statusEl.textContent="No se pudo acceder al micrófono: "+err.message}});
+let stableStart=null,bestTime=0,totalFrames=0,goodFrames=0;
+
+function midiFromTarget(){
+  const octave=Number(targetOctave.value);
+  return (octave+1)*12+NOTE_INDEX[targetNote.value];
+}
+function freqFromMidi(m){return 440*Math.pow(2,(m-69)/12)}
+function targetFreq(){return freqFromMidi(midiFromTarget())}
+
+function frequencyToNote(freq){
+  const midi=69+12*Math.log2(freq/440),nearest=Math.round(midi);
+  return {name:NOTE_NAMES[(nearest%12+12)%12],octave:Math.floor(nearest/12)-1};
+}
+function centsFromTarget(freq){
+  return 1200*Math.log2(freq/targetFreq());
+}
+function updateTarget(){
+  targetDisplay.textContent=targetNote.value+targetOctave.value+" · "+targetFreq().toFixed(2)+" Hz";
+  resetExercise();
+}
+function resetExercise(){
+  stableStart=null;bestTime=0;totalFrames=0;goodFrames=0;
+  stableTimeEl.textContent="0.0 s";bestTimeEl.textContent="0.0 s";accuracyEl.textContent="—";
+}
+
+function autoCorrelate(buf,sampleRate){
+  let SIZE=buf.length,rms=0;
+  for(let i=0;i<SIZE;i++)rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/SIZE);
+  if(rms<0.01)return -1;
+
+  let r1=0,r2=SIZE-1,thres=.2;
+  for(let i=0;i<SIZE/2;i++){if(Math.abs(buf[i])<thres){r1=i;break}}
+  for(let i=1;i<SIZE/2;i++){if(Math.abs(buf[SIZE-i])<thres){r2=SIZE-i;break}}
+  buf=buf.slice(r1,r2); SIZE=buf.length;
+
+  const c=new Array(SIZE).fill(0);
+  for(let i=0;i<SIZE;i++)for(let j=0;j<SIZE-i;j++)c[i]+=buf[j]*buf[j+i];
+
+  let d=0;
+  while(d+1<SIZE&&c[d]>c[d+1])d++;
+
+  let maxval=-1,maxpos=-1;
+  for(let i=d;i<SIZE;i++){if(c[i]>maxval){maxval=c[i];maxpos=i}}
+  if(maxpos<=0)return -1;
+
+  let T0=maxpos;
+  if(T0>0&&T0<SIZE-1){
+    const x1=c[T0-1],x2=c[T0],x3=c[T0+1];
+    const a=(x1+x3-2*x2)/2,b=(x3-x1)/2;
+    if(a!==0)T0=T0-b/(2*a);
+  }
+  const freq=sampleRate/T0;
+  if(freq<65||freq>1200)return -1;
+  return freq;
+}
+
+function setStatus(c){
+  statusEl.className="status";
+  if(Math.abs(c)<=5){statusEl.textContent="Muy afinado";statusEl.classList.add("good")}
+  else if(c<0){statusEl.textContent="Estás bajo: sube un poco";statusEl.classList.add("warn")}
+  else{statusEl.textContent="Estás alto: baja un poco";statusEl.classList.add("warn")}
+}
+
+function update(){
+  if(!running)return;
+  analyser.getFloatTimeDomainData(buffer);
+  const freq=autoCorrelate(buffer,audioCtx.sampleRate);
+
+  if(freq>0){
+    const n=frequencyToNote(freq);
+    const cents=centsFromTarget(freq);
+    noteEl.textContent=n.name+n.octave;
+    freqEl.textContent=freq.toFixed(2)+" Hz";
+    centsEl.textContent=(cents>=0?"+":"")+cents.toFixed(1)+" cents respecto al objetivo";
+
+    const clamped=Math.max(-50,Math.min(50,cents));
+    dotEl.style.left=(50+clamped)+"%";
+    setStatus(cents);
+
+    totalFrames++;
+    if(Math.abs(cents)<=10){
+      goodFrames++;
+      if(stableStart===null)stableStart=performance.now();
+      const current=(performance.now()-stableStart)/1000;
+      stableTimeEl.textContent=current.toFixed(1)+" s";
+      if(current>bestTime){bestTime=current;bestTimeEl.textContent=bestTime.toFixed(1)+" s"}
+    } else {
+      stableStart=null;
+      stableTimeEl.textContent="0.0 s";
+    }
+    accuracyEl.textContent=Math.round((goodFrames/totalFrames)*100)+"%";
+  }else{
+    noteEl.textContent="—";freqEl.textContent="— Hz";centsEl.textContent="— cents respecto al objetivo";
+    statusEl.className="status";statusEl.textContent="Esperando una nota estable…";
+    dotEl.style.left="50%";stableStart=null;stableTimeEl.textContent="0.0 s";
+  }
+  requestAnimationFrame(update);
+}
+
+async function toggleMic(){
+  try{
+    if(!running){
+      stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      analyser=audioCtx.createAnalyser();analyser.fftSize=4096;
+      buffer=new Float32Array(analyser.fftSize);
+      source=audioCtx.createMediaStreamSource(stream);source.connect(analyser);
+      running=true;startBtn.textContent="Detener micrófono";statusEl.textContent="Micrófono activo";update();
+    }else{
+      running=false;
+      if(stream)stream.getTracks().forEach(t=>t.stop());
+      if(audioCtx)await audioCtx.close();
+      startBtn.textContent="Activar micrófono";statusEl.textContent="Micrófono inactivo";
+    }
+  }catch(err){statusEl.textContent="No se pudo acceder al micrófono: "+err.message}
+}
+
+async function playReference(){
+  const ctx=new(window.AudioContext||window.webkitAudioContext)();
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.type="sine";osc.frequency.value=targetFreq();
+  gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.18,ctx.currentTime+0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+1.2);
+  osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+1.25);
+  setTimeout(()=>ctx.close(),1500);
+}
+
+startBtn.addEventListener("click",toggleMic);
+targetNote.addEventListener("change",updateTarget);
+targetOctave.addEventListener("change",updateTarget);
+playTone.addEventListener("click",playReference);
+resetScore.addEventListener("click",resetExercise);
+updateTarget();
 </script>
 </body>
 </html>
