@@ -5,48 +5,92 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
 <title>Entrenador de afinación vocal</title>
 <style>
-:root{color-scheme:dark}
+:root{
+  color-scheme:dark;
+  --bg:#0f172a;
+  --panel:#111827;
+  --panel-2:#172033;
+  --line:#263244;
+  --text:#f8fafc;
+  --muted:#94a3b8;
+  --accent:#22c55e;
+  --accent-2:#38bdf8;
+}
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#111827;color:#f9fafb}
-main{max-width:760px;margin:0 auto;padding:18px}
-.card{background:#1f2937;border-radius:20px;padding:18px;margin-bottom:14px}
-h1{margin:0 0 6px;font-size:1.6rem}h2{font-size:1rem;margin:0 0 12px;color:#e5e7eb}
-p,.muted{color:#94a3b8}
+body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#0b1020 0%,#0f172a 100%);color:var(--text);min-height:100vh}
+main{width:min(94vw,1180px);margin:0 auto;padding:28px 18px 40px}
+.dashboard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.card{background:rgba(17,24,39,.96);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 14px 40px rgba(0,0,0,.18)}
+.hero,.scales,.help{grid-column:1/-1}
+.hero{display:grid;grid-template-columns:1.6fr .9fr;gap:22px;align-items:center}
+.hero-copy h1{font-size:clamp(1.9rem,3vw,3rem);margin:0 0 8px;line-height:1.05}
+.hero-copy p{margin:0}
+.hero-action{display:flex;justify-content:flex-end}
+h2{font-size:1.05rem;margin:0 0 16px;color:#e5e7eb;letter-spacing:.01em}
+p,.muted{color:var(--muted)}
 button,select,input{font:inherit}
-button{border:0;border-radius:12px;padding:13px 16px;font-weight:700;cursor:pointer}
-.primary{width:100%;background:#f9fafb;color:#111827}
-.secondary{background:#374151;color:#f9fafb}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-label{display:block;font-size:.85rem;color:#cbd5e1;margin-bottom:6px}
-select,input{width:100%;padding:11px;border-radius:10px;border:1px solid #4b5563;background:#111827;color:#f9fafb}
-.note{text-align:center;font-size:5rem;font-weight:800;line-height:1;margin-top:12px}
-.freq,.cents{text-align:center}.freq{font-size:1.45rem}.cents{font-size:1.1rem;color:#cbd5e1}
-.meter{position:relative;height:22px;background:#374151;border-radius:999px;margin:18px 0 8px;overflow:hidden}
-.center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#fff}
-.dot{position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#f9fafb;left:50%;transform:translateX(-50%);transition:left .07s linear}
-.labels{display:flex;justify-content:space-between;font-size:.75rem;color:#94a3b8}
-.status{text-align:center;font-weight:700;margin-top:10px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.stat{background:#111827;border-radius:12px;padding:12px;text-align:center}
-.stat b{display:block;font-size:1.25rem}.stat span{font-size:.75rem;color:#94a3b8}
-.target{font-size:2rem;font-weight:800;text-align:center}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1;min-width:140px}
+button{border:1px solid transparent;border-radius:13px;padding:13px 16px;font-weight:700;cursor:pointer;transition:.18s transform,.18s background,.18s border-color}
+button:active{transform:scale(.98)}
+.primary{background:var(--accent);color:#052e16;min-width:220px}
+.primary:hover{background:#4ade80}
+.secondary{background:#1e293b;color:#f8fafc;border-color:#334155}
+.secondary:hover{background:#273449;border-color:#475569}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:.82rem;font-weight:700;color:#cbd5e1;margin-bottom:7px}
+select,input{width:100%;padding:12px 13px;border-radius:12px;border:1px solid #334155;background:#0f172a;color:#f8fafc;outline:none}
+select:focus,input:focus{border-color:var(--accent-2);box-shadow:0 0 0 3px rgba(56,189,248,.12)}
+.target{font-size:clamp(1.6rem,3vw,2.3rem);font-weight:800;text-align:center;margin:18px 0}
+.note{text-align:center;font-size:clamp(4.6rem,8vw,7rem);font-weight:900;line-height:.95;margin-top:12px;letter-spacing:-.04em}
+.freq,.cents{text-align:center}
+.freq{font-size:1.55rem;margin-top:8px}
+.cents{font-size:1.05rem;color:#cbd5e1;margin-top:3px}
+.meter{position:relative;height:24px;background:#0f172a;border:1px solid #334155;border-radius:999px;margin:22px 0 8px;overflow:hidden}
+.center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#e2e8f0}
+.dot{position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 0 4px rgba(56,189,248,.12);left:50%;transform:translateX(-50%);transition:left .07s linear}
+.labels{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
+.status{text-align:center;font-weight:800;margin-top:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.stat{background:#0f172a;border:1px solid #263244;border-radius:14px;padding:14px;text-align:center}
+.stat b{display:block;font-size:1.35rem}.stat span{font-size:.75rem;color:var(--muted)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{flex:1;min-width:150px}
 .good{color:#86efac}.warn{color:#facc15}.bad{color:#fca5a5}
-.scale-notes{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
-.scale-note{background:#111827;border:1px solid #4b5563;border-radius:999px;padding:7px 11px;font-weight:700}
-.scale-meta{font-size:.85rem;color:#94a3b8;margin-top:8px}
-@media(max-width:520px){.grid,.stats{grid-template-columns:1fr}.note{font-size:4rem}}
+.scales{padding:24px}
+.scales-layout{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr);gap:24px;align-items:start}
+.scale-notes{display:flex;gap:9px;flex-wrap:wrap;margin:2px 0 14px}
+.scale-note{background:#0f172a;border:1px solid #334155;border-radius:999px;padding:8px 12px;font-weight:800}
+.scale-meta{font-size:.9rem;color:var(--muted);margin:8px 0 16px}
+.help p{max-width:850px;margin:0}
+@media(max-width:900px){
+  main{width:min(96vw,860px);padding:18px 12px 28px}
+  .dashboard{grid-template-columns:1fr}
+  .hero,.scales,.help{grid-column:auto}
+  .hero{grid-template-columns:1fr}
+  .hero-action{justify-content:stretch}
+  .primary{width:100%}
+  .scales-layout{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .grid,.stats{grid-template-columns:1fr}
+  .card{padding:18px}
+  .actions{flex-direction:column}
+  .actions button{width:100%}
+}
 </style>
 </head>
 <body>
 <main>
-  <div class="card">
-    <h1>Entrenador de afinación vocal</h1>
-    <p>Detecta tu nota y entrena contra una nota objetivo.</p>
-    <button class="primary" id="startBtn">Activar micrófono</button>
-  </div>
+<div class="dashboard">
+  <section class="card hero">
+    <div class="hero-copy">
+      <h1>Entrenador de afinación vocal</h1>
+      <p>Detecta tu nota, practica afinación y explora escalas y modos en tiempo real.</p>
+    </div>
+    <div class="hero-action">
+      <button class="primary" id="startBtn">Activar micrófono</button>
+    </div>
+  </section>
 
-  <div class="card">
+  <section class="card target-card">
     <h2>Objetivo</h2>
     <div class="grid">
       <div>
@@ -69,9 +113,9 @@ select,input{width:100%;padding:11px;border-radius:10px;border:1px solid #4b5563
       <button class="secondary" id="playTone">▶ Escuchar referencia</button>
       <button class="secondary" id="resetScore">Reiniciar ejercicio</button>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
+  <section class="card voice-card">
     <h2>Tu voz</h2>
     <div class="note" id="note">—</div>
     <div class="freq" id="freq">— Hz</div>
@@ -82,43 +126,49 @@ select,input{width:100%;padding:11px;border-radius:10px;border:1px solid #4b5563
     </div>
     <div class="labels"><span>-50 cents</span><span>0</span><span>+50 cents</span></div>
     <div class="status" id="status">Micrófono inactivo</div>
-
     <div class="stats">
       <div class="stat"><b id="accuracy">—</b><span>Precisión</span></div>
       <div class="stat"><b id="stableTime">0.0 s</b><span>Tiempo afinado</span></div>
       <div class="stat"><b id="bestTime">0.0 s</b><span>Mejor racha</span></div>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
+  <section class="card scales">
     <h2>Escalas y modos</h2>
-    <div class="grid">
+    <div class="scales-layout">
       <div>
-        <label for="scaleRoot">Tonalidad</label>
-        <select id="scaleRoot">
-          <option>Do</option><option>Do♯</option><option>Re</option><option>Re♯</option>
-          <option>Mi</option><option>Fa</option><option>Fa♯</option><option selected>Sol</option>
-          <option>Sol♯</option><option>La</option><option>La♯</option><option>Si</option>
-        </select>
+        <div class="grid">
+          <div>
+            <label for="scaleRoot">Tonalidad</label>
+            <select id="scaleRoot">
+              <option>Do</option><option>Do♯</option><option>Re</option><option>Re♯</option>
+              <option>Mi</option><option>Fa</option><option>Fa♯</option><option selected>Sol</option>
+              <option>Sol♯</option><option>La</option><option>La♯</option><option>Si</option>
+            </select>
+          </div>
+          <div>
+            <label for="scaleType">Escala / modo</label>
+            <select id="scaleType"></select>
+          </div>
+        </div>
       </div>
       <div>
-        <label for="scaleType">Escala / modo</label>
-        <select id="scaleType"></select>
+        <div class="scale-notes" id="scaleNotes"></div>
+        <div class="scale-meta" id="scaleMeta"></div>
+        <div class="actions">
+          <button class="secondary" id="playScaleUp">▶ Ascendente</button>
+          <button class="secondary" id="playScaleDown">▶ Descendente</button>
+          <button class="secondary" id="playScaleBoth">▶ Subir y bajar</button>
+        </div>
       </div>
     </div>
-    <div class="scale-notes" id="scaleNotes"></div>
-    <div class="scale-meta" id="scaleMeta"></div>
-    <div class="actions">
-      <button class="secondary" id="playScaleUp">▶ Ascendente</button>
-      <button class="secondary" id="playScaleDown">▶ Descendente</button>
-      <button class="secondary" id="playScaleBoth">▶ Subir y bajar</button>
-    </div>
-  </div>
+  </section>
 
-  <div class="card">
+  <section class="card help">
     <h2>Cómo entrenar</h2>
     <p class="muted">Elige una nota, escucha la referencia y luego cántala con una vocal sostenida. El cronómetro avanza mientras estés dentro de ±10 cents. Dentro de ±5 cents se considera muy afinado.</p>
-  </div>
+  </section>
+</div>
 </main>
 
 <script>
@@ -179,14 +229,11 @@ function midiFromTarget(){
 }
 function freqFromMidi(m){return 440*Math.pow(2,(m-69)/12)}
 function targetFreq(){return freqFromMidi(midiFromTarget())}
-
 function frequencyToNote(freq){
   const midi=69+12*Math.log2(freq/440),nearest=Math.round(midi);
   return {name:NOTE_NAMES[(nearest%12+12)%12],octave:Math.floor(nearest/12)-1};
 }
-function centsFromTarget(freq){
-  return 1200*Math.log2(freq/targetFreq());
-}
+function centsFromTarget(freq){return 1200*Math.log2(freq/targetFreq())}
 function updateTarget(){
   targetDisplay.textContent=targetNote.value+targetOctave.value+" · "+targetFreq().toFixed(2)+" Hz";
   resetExercise();
@@ -195,28 +242,21 @@ function resetExercise(){
   stableStart=null;bestTime=0;totalFrames=0;goodFrames=0;
   stableTimeEl.textContent="0.0 s";bestTimeEl.textContent="0.0 s";accuracyEl.textContent="—";
 }
-
 function autoCorrelate(buf,sampleRate){
   let SIZE=buf.length,rms=0;
   for(let i=0;i<SIZE;i++)rms+=buf[i]*buf[i];
   rms=Math.sqrt(rms/SIZE);
   if(rms<0.01)return -1;
-
   let r1=0,r2=SIZE-1,thres=.2;
   for(let i=0;i<SIZE/2;i++){if(Math.abs(buf[i])<thres){r1=i;break}}
   for(let i=1;i<SIZE/2;i++){if(Math.abs(buf[SIZE-i])<thres){r2=SIZE-i;break}}
-  buf=buf.slice(r1,r2); SIZE=buf.length;
-
+  buf=buf.slice(r1,r2);SIZE=buf.length;
   const c=new Array(SIZE).fill(0);
   for(let i=0;i<SIZE;i++)for(let j=0;j<SIZE-i;j++)c[i]+=buf[j]*buf[j+i];
-
-  let d=0;
-  while(d+1<SIZE&&c[d]>c[d+1])d++;
-
+  let d=0;while(d+1<SIZE&&c[d]>c[d+1])d++;
   let maxval=-1,maxpos=-1;
   for(let i=d;i<SIZE;i++){if(c[i]>maxval){maxval=c[i];maxpos=i}}
   if(maxpos<=0)return -1;
-
   let T0=maxpos;
   if(T0>0&&T0<SIZE-1){
     const x1=c[T0-1],x2=c[T0],x3=c[T0+1];
@@ -227,30 +267,23 @@ function autoCorrelate(buf,sampleRate){
   if(freq<65||freq>1200)return -1;
   return freq;
 }
-
 function setStatus(c){
   statusEl.className="status";
   if(Math.abs(c)<=5){statusEl.textContent="Muy afinado";statusEl.classList.add("good")}
   else if(c<0){statusEl.textContent="Estás bajo: sube un poco";statusEl.classList.add("warn")}
   else{statusEl.textContent="Estás alto: baja un poco";statusEl.classList.add("warn")}
 }
-
 function update(){
   if(!running)return;
   analyser.getFloatTimeDomainData(buffer);
   const freq=autoCorrelate(buffer,audioCtx.sampleRate);
-
   if(freq>0){
-    const n=frequencyToNote(freq);
-    const cents=centsFromTarget(freq);
+    const n=frequencyToNote(freq),cents=centsFromTarget(freq);
     noteEl.textContent=n.name+n.octave;
     freqEl.textContent=freq.toFixed(2)+" Hz";
     centsEl.textContent=(cents>=0?"+":"")+cents.toFixed(1)+" cents respecto al objetivo";
-
-    const clamped=Math.max(-50,Math.min(50,cents));
-    dotEl.style.left=(50+clamped)+"%";
+    dotEl.style.left=(50+Math.max(-50,Math.min(50,cents)))+"%";
     setStatus(cents);
-
     totalFrames++;
     if(Math.abs(cents)<=10){
       goodFrames++;
@@ -258,9 +291,8 @@ function update(){
       const current=(performance.now()-stableStart)/1000;
       stableTimeEl.textContent=current.toFixed(1)+" s";
       if(current>bestTime){bestTime=current;bestTimeEl.textContent=bestTime.toFixed(1)+" s"}
-    } else {
-      stableStart=null;
-      stableTimeEl.textContent="0.0 s";
+    }else{
+      stableStart=null;stableTimeEl.textContent="0.0 s";
     }
     accuracyEl.textContent=Math.round((goodFrames/totalFrames)*100)+"%";
   }else{
@@ -270,7 +302,6 @@ function update(){
   }
   requestAnimationFrame(update);
 }
-
 async function toggleMic(){
   try{
     if(!running){
@@ -288,32 +319,29 @@ async function toggleMic(){
     }
   }catch(err){statusEl.textContent="No se pudo acceder al micrófono: "+err.message}
 }
-
 function noteNameFromMidi(m){return NOTE_NAMES[(m%12+12)%12]+(Math.floor(m/12)-1)}
 function initScales(){
   SCALES.forEach((s,i)=>{const o=document.createElement("option");o.value=i;o.textContent=s[0];scaleType.appendChild(o)});
-  scaleType.value="0";
-  updateScaleDisplay();
+  scaleType.value="0";updateScaleDisplay();
 }
 function selectedScaleMidis(){
   const rootMidi=(3+1)*12+NOTE_INDEX[scaleRoot.value];
   return SCALES[Number(scaleType.value)][1].map(x=>rootMidi+x);
 }
 function updateScaleDisplay(){
-  const scale=SCALES[Number(scaleType.value)];
-  const midis=selectedScaleMidis();
+  const scale=SCALES[Number(scaleType.value)],midis=selectedScaleMidis();
   scaleNotes.innerHTML="";
   midis.forEach(m=>{const span=document.createElement("span");span.className="scale-note";span.textContent=noteNameFromMidi(m);scaleNotes.appendChild(span)});
   scaleMeta.textContent=scale[0]+" en "+scaleRoot.value+" · "+(midis.length-1)+" grados más la octava";
 }
 async function ensureAudio(){
-  if(!audioCtx || audioCtx.state==="closed") audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  if(audioCtx.state==="suspended") await audioCtx.resume();
+  if(!audioCtx || audioCtx.state==="closed")audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==="suspended")await audioCtx.resume();
 }
 async function playMidiSequence(midis){
   try{
     await ensureAudio();
-    const now=audioCtx.currentTime+0.05,step=.48,dur=.42;
+    const now=audioCtx.currentTime+.05,step=.48,dur=.42;
     midis.forEach((m,i)=>{
       const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
       osc.type="sine";osc.frequency.setValueAtTime(freqFromMidi(m),now+i*step);
@@ -328,37 +356,19 @@ async function playMidiSequence(midis){
 }
 async function playReference(){
   try{
-    if(!audioCtx || audioCtx.state==="closed"){
-      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    }
-    if(audioCtx.state==="suspended"){
-      await audioCtx.resume();
-    }
-
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-
-    osc.type="sine";
-    osc.frequency.setValueAtTime(targetFreq(),audioCtx.currentTime);
-
-    gain.gain.setValueAtTime(0.0001,audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.35,audioCtx.currentTime+0.05);
-    gain.gain.setValueAtTime(0.35,audioCtx.currentTime+1.2);
-    gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+1.8);
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime+1.85);
-
+    await ensureAudio();
+    const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+    osc.type="sine";osc.frequency.setValueAtTime(targetFreq(),audioCtx.currentTime);
+    gain.gain.setValueAtTime(.0001,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.35,audioCtx.currentTime+.05);
+    gain.gain.setValueAtTime(.35,audioCtx.currentTime+1.2);
+    gain.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+1.8);
+    osc.connect(gain);gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime);osc.stop(audioCtx.currentTime+1.85);
     playTone.textContent="🔊 Sonando "+targetNote.value+targetOctave.value;
     setTimeout(()=>{playTone.textContent="▶ Escuchar referencia"},1900);
-  }catch(err){
-    statusEl.textContent="No se pudo reproducir la referencia: "+err.message;
-  }
+  }catch(err){statusEl.textContent="No se pudo reproducir la referencia: "+err.message}
 }
-
 startBtn.addEventListener("click",toggleMic);
 targetNote.addEventListener("change",updateTarget);
 targetOctave.addEventListener("change",updateTarget);
@@ -368,10 +378,7 @@ scaleRoot.addEventListener("change",updateScaleDisplay);
 scaleType.addEventListener("change",updateScaleDisplay);
 playScaleUp.addEventListener("click",()=>playMidiSequence(selectedScaleMidis()));
 playScaleDown.addEventListener("click",()=>playMidiSequence([...selectedScaleMidis()].reverse()));
-playScaleBoth.addEventListener("click",()=>{
-  const a=selectedScaleMidis();
-  playMidiSequence([...a,...a.slice(0,-1).reverse()]);
-});
+playScaleBoth.addEventListener("click",()=>{const a=selectedScaleMidis();playMidiSequence([...a,...a.slice(0,-1).reverse()])});
 initScales();
 updateTarget();
 </script>
