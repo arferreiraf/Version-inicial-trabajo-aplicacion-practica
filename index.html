@@ -729,8 +729,9 @@ function renderFretboard(activeMidi=null){
     }
   }
 
-  for(let sIdx=0;sIdx<6;sIdx++){
-    const y=top+sIdx*stringGap;
+  for(let row=0;row<6;row++){
+    const sIdx=5-row;
+    const y=top+row*stringGap;
     const thickness=(1.5+(5-sIdx)*.48).toFixed(2);
     fretboard.appendChild(svgEl("line",{x1:left,y1:y,x2:left+boardW,y2:y,class:"fret-string","stroke-width":thickness}));
     const label=svgEl("text",{x:18,y:y+3,class:"fret-label","text-anchor":"start"});
