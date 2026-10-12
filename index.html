@@ -1,25 +1,27 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="synthwave">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
 <title>Entrenador de afinación vocal</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" />
 <style>
 :root{
   color-scheme:dark;
-  --bg:#090314;
-  --panel:rgba(17,8,36,.78);
-  --panel-2:rgba(28,10,54,.76);
-  --line:rgba(255,231,97,.22);
-  --text:#fff7ff;
-  --muted:#b8a9c9;
-  --accent:#ffea61;
-  --accent-2:#ff3bd4;
-  --accent-3:#7a5cff;
-  --cyan:#4de8ff;
+  --bg:var(--color-base-300);
+  --panel:var(--color-base-200);
+  --panel-2:var(--color-base-100);
+  --line:var(--color-primary);
+  --text:var(--color-base-content);
+  --muted:color-mix(in oklab,var(--color-base-content) 62%,transparent);
+  --accent:var(--color-primary);
+  --accent-2:var(--color-secondary);
+  --accent-3:var(--color-accent);
+  --cyan:var(--color-info);
 }
 *{box-sizing:border-box}
-html{background:#07020f}
+html{background:var(--color-base-300)}
 body{
   margin:0;
   font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -27,9 +29,9 @@ body{
   min-height:100vh;
   overflow-x:hidden;
   background:
-    radial-gradient(circle at 18% 16%,rgba(255,59,212,.10),transparent 26%),
-    radial-gradient(circle at 78% 24%,rgba(77,232,255,.08),transparent 24%),
-    linear-gradient(180deg,#080211 0%,#0b0319 46%,#120426 100%);
+    radial-gradient(circle at 18% 16%,color-mix(in oklab,var(--color-secondary) 18%,transparent),transparent 28%),
+    radial-gradient(circle at 78% 24%,color-mix(in oklab,var(--color-info) 14%,transparent),transparent 26%),
+    linear-gradient(180deg,var(--color-base-300) 0%,color-mix(in oklab,var(--color-base-300) 82%,var(--color-base-100)) 100%);
   position:relative;
 }
 #hex-bg{
@@ -53,8 +55,8 @@ main{
 }
 .dashboard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
 .card{
-  background:linear-gradient(180deg,rgba(24,8,47,.80),rgba(12,6,27,.86));
-  border:1px solid rgba(255,234,97,.20);
+  background:color-mix(in oklab,var(--color-base-200) 84%,transparent);
+  border:1px solid color-mix(in oklab,var(--color-primary) 28%,transparent);
   border-radius:22px;
   padding:22px;
   backdrop-filter:blur(16px);
@@ -91,7 +93,10 @@ main{
   text-shadow:0 0 26px rgba(255,59,212,.14);
 }
 .hero-copy p{margin:0}
-.hero-action{display:flex;justify-content:flex-end}
+.hero-action{display:flex;justify-content:flex-end;align-items:end;gap:10px;flex-wrap:wrap}
+.theme-control{min-width:220px}
+.theme-control label{margin-bottom:5px}
+#themeSelect{min-width:220px}
 h2{font-size:1.05rem;margin:0 0 16px;color:#f6ecff;letter-spacing:.03em}
 p,.muted{color:var(--muted)}
 button,select,input{font:inherit}
@@ -105,16 +110,16 @@ button{
 }
 button:active{transform:scale(.98)}
 .primary{
-  background:linear-gradient(135deg,#ffe75f,#ffc928);
-  color:#241700;
+  background:var(--color-primary);
+  color:var(--color-primary-content);
   min-width:220px;
   box-shadow:0 0 22px rgba(255,231,95,.22);
 }
 .primary:hover{box-shadow:0 0 30px rgba(255,231,95,.38)}
 .secondary{
-  background:linear-gradient(180deg,rgba(43,17,74,.96),rgba(25,11,48,.96));
-  color:#fff;
-  border-color:rgba(255,59,212,.30);
+  background:var(--color-secondary);
+  color:var(--color-secondary-content);
+  border-color:color-mix(in oklab,var(--color-secondary) 72%,var(--color-base-content));
   box-shadow:inset 0 0 0 1px rgba(122,92,255,.06);
 }
 .secondary:hover{
@@ -127,9 +132,9 @@ select,input{
   width:100%;
   padding:12px 13px;
   border-radius:12px;
-  border:1px solid rgba(122,92,255,.35);
-  background:rgba(9,3,20,.88);
-  color:#fff;
+  border:1px solid color-mix(in oklab,var(--color-base-content) 22%,transparent);
+  background:var(--color-base-200);
+  color:var(--color-base-content);
   outline:none;
 }
 select:focus,input:focus{
@@ -281,7 +286,47 @@ select:focus,input:focus{
       <p>Detecta tu nota, practica afinación y explora escalas y modos en tiempo real.</p>
     </div>
     <div class="hero-action">
-      <button class="primary" id="startBtn">Activar micrófono</button>
+      <div class="theme-control">
+        <label for="themeSelect">Tema DaisyUI</label>
+        <select id="themeSelect" class="select select-bordered select-sm">
+          <option value="light">light</option>
+          <option value="dark">dark</option>
+          <option value="cupcake">cupcake</option>
+          <option value="bumblebee">bumblebee</option>
+          <option value="emerald">emerald</option>
+          <option value="corporate">corporate</option>
+          <option value="synthwave" selected>synthwave</option>
+          <option value="retro">retro</option>
+          <option value="cyberpunk">cyberpunk</option>
+          <option value="valentine">valentine</option>
+          <option value="halloween">halloween</option>
+          <option value="garden">garden</option>
+          <option value="forest">forest</option>
+          <option value="aqua">aqua</option>
+          <option value="lofi">lofi</option>
+          <option value="pastel">pastel</option>
+          <option value="fantasy">fantasy</option>
+          <option value="wireframe">wireframe</option>
+          <option value="black">black</option>
+          <option value="luxury">luxury</option>
+          <option value="dracula">dracula</option>
+          <option value="cmyk">cmyk</option>
+          <option value="autumn">autumn</option>
+          <option value="business">business</option>
+          <option value="acid">acid</option>
+          <option value="lemonade">lemonade</option>
+          <option value="night">night</option>
+          <option value="coffee">coffee</option>
+          <option value="winter">winter</option>
+          <option value="dim">dim</option>
+          <option value="nord">nord</option>
+          <option value="sunset">sunset</option>
+          <option value="caramellatte">caramellatte</option>
+          <option value="abyss">abyss</option>
+          <option value="silk">silk</option>
+        </select>
+      </div>
+      <button class="primary btn btn-primary" id="startBtn">Activar micrófono</button>
     </div>
   </section>
 
@@ -459,9 +504,11 @@ function animateHexBackground(ts){
     const pulse=(Math.sin(ts*0.0012*Number(p.dataset.speed)+Number(p.dataset.phase))+1)/2;
     const influence=Math.max(0,1-d/260);
     const opacity=0.08+influence*0.58*(0.55+0.45*pulse);
-    p.style.stroke="rgba(255,232,96,"+opacity.toFixed(3)+")";
-    p.style.fill="rgba(20,5,35,"+(0.16+influence*.10).toFixed(3)+")";
-    p.style.filter=influence>.35 ? "drop-shadow(0 0 "+(2+8*influence).toFixed(1)+"px rgba(255,232,96,"+(0.20*influence).toFixed(3)+"))" : "none";
+    p.style.stroke="var(--color-primary)";
+    p.style.strokeOpacity=opacity.toFixed(3);
+    p.style.fill="var(--color-base-300)";
+    p.style.fillOpacity=(0.16+influence*.10).toFixed(3);
+    p.style.filter=influence>.35 ? "drop-shadow(0 0 "+(2+8*influence).toFixed(1)+"px var(--color-primary))" : "none";
   });
   requestAnimationFrame(animateHexBackground);
 }
@@ -523,7 +570,7 @@ targetDisplay=$("targetDisplay"),playTone=$("playTone"),resetScore=$("resetScore
 accuracyEl=$("accuracy"),stableTimeEl=$("stableTime"),bestTimeEl=$("bestTime"),
 scaleRoot=$("scaleRoot"),scaleType=$("scaleType"),scaleNotes=$("scaleNotes"),scaleMeta=$("scaleMeta"),
 playScaleUp=$("playScaleUp"),playScaleDown=$("playScaleDown"),playScaleBoth=$("playScaleBoth"),
-fretboard=$("fretboard"),fretboardMode=$("fretboardMode");
+fretboard=$("fretboard"),fretboardMode=$("fretboardMode"),themeSelect=$("themeSelect");
 
 let audioCtx,analyser,source,stream,running=false,buffer;
 let stableStart=null,bestTime=0,totalFrames=0,goodFrames=0;
@@ -759,6 +806,19 @@ async function playReference(){
     setTimeout(()=>{playTone.textContent="▶ Escuchar referencia"},1900);
   }catch(err){statusEl.textContent="No se pudo reproducir la referencia: "+err.message}
 }
+const DAISY_THEMES=["light","dark","cupcake","bumblebee","emerald","corporate","synthwave","retro","cyberpunk","valentine","halloween","garden","forest","aqua","lofi","pastel","fantasy","wireframe","black","luxury","dracula","cmyk","autumn","business","acid","lemonade","night","coffee","winter","dim","nord","sunset","caramellatte","abyss","silk"];
+function applyTheme(theme){
+  const safe=DAISY_THEMES.includes(theme)?theme:"synthwave";
+  document.documentElement.setAttribute("data-theme",safe);
+  if(themeSelect)themeSelect.value=safe;
+  try{localStorage.setItem("afinador-theme",safe)}catch(e){}
+  rebuildHexBackground();
+}
+let savedTheme="synthwave";
+try{savedTheme=localStorage.getItem("afinador-theme")||"synthwave"}catch(e){}
+applyTheme(savedTheme);
+themeSelect.addEventListener("change",()=>applyTheme(themeSelect.value));
+
 startBtn.addEventListener("click",toggleMic);
 targetNote.addEventListener("change",updateTarget);
 targetOctave.addEventListener("change",updateTarget);
