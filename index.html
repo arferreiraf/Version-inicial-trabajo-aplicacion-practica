@@ -270,7 +270,8 @@ select:focus,input:focus{
 .bad{color:#ff9bd9}
 .scales{padding:24px}
 .scales-layout{display:grid;grid-template-columns:minmax(340px,.9fr) minmax(0,1.1fr);gap:24px;align-items:start}
-.scales-layout .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.scales-layout .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sound-status{font-size:.8rem;color:var(--muted);margin-top:6px;min-height:1.1em}
 .scale-notes{display:flex;gap:9px;flex-wrap:wrap;margin:2px 0 14px}
 .scale-note{
   background:rgba(10,3,24,.9);
@@ -443,6 +444,18 @@ select:focus,input:focus{
               <option value="2">2 octavas</option>
               <option value="3">3 octavas</option>
             </select>
+          </div>
+          <div>
+            <label for="soundType">Sonido</label>
+            <select id="soundType">
+              <option value="sine">Seno puro</option>
+              <option value="acoustic_guitar_nylon" selected>Guitarra nylon</option>
+              <option value="acoustic_guitar_steel">Guitarra acústica steel</option>
+              <option value="electric_guitar_clean">Guitarra eléctrica limpia</option>
+              <option value="overdriven_guitar">Guitarra overdrive</option>
+              <option value="distortion_guitar">Guitarra con distorsión</option>
+            </select>
+            <div class="sound-status" id="soundStatus">La muestra se cargará al reproducir.</div>
           </div>
         </div>
       </div>
@@ -625,7 +638,8 @@ accuracyEl=$("accuracy"),stableTimeEl=$("stableTime"),bestTimeEl=$("bestTime"),
 scaleRoot=$("scaleRoot"),scaleType=$("scaleType"),scaleNotes=$("scaleNotes"),scaleMeta=$("scaleMeta"),
 playScaleUp=$("playScaleUp"),playScaleDown=$("playScaleDown"),playScaleBoth=$("playScaleBoth"),
 fretboard=$("fretboard"),fretboardMode=$("fretboardMode"),scaleOctaves=$("scaleOctaves"),
-themePickerBtn=$("themePickerBtn"),themePickerCurrent=$("themePickerCurrent"),themeMenu=$("themeMenu");
+themePickerBtn=$("themePickerBtn"),themePickerCurrent=$("themePickerCurrent"),themeMenu=$("themeMenu"),
+soundType=$("soundType"),soundStatus=$("soundStatus");
 
 let audioCtx,analyser,source,stream,running=false,buffer;
 let stableStart=null,bestTime=0,totalFrames=0,goodFrames=0;
@@ -714,6 +728,7 @@ async function toggleMic(){
     if(!running){
       stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
       audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      soundfontCache.clear();
       analyser=audioCtx.createAnalyser();analyser.fftSize=4096;
       buffer=new Float32Array(analyser.fftSize);
       source=audioCtx.createMediaStreamSource(stream);source.connect(analyser);
@@ -722,6 +737,7 @@ async function toggleMic(){
       running=false;
       if(stream)stream.getTracks().forEach(t=>t.stop());
       if(audioCtx)await audioCtx.close();
+      soundfontCache.clear();
       startBtn.textContent="Activar micrófono";statusEl.textContent="Micrófono inactivo";
     }
   }catch(err){statusEl.textContent="No se pudo acceder al micrófono: "+err.message}
@@ -842,24 +858,70 @@ function updateScaleDisplay(){
   scaleMeta.textContent=scale[0]+" en "+scaleRoot.value+" · inicia en "+noteNameFromMidi(midis[0])+" sobre la 6ª cuerda · "+octaves+" "+(octaves===1?"octava":"octavas")+" · "+midis.length+" notas";
   renderFretboard(activeScaleMidi);
 }
+let smplrModulePromise=null;
+const soundfontCache=new Map();
+const GUITAR_SAMPLE_NOTES=Array.from({length:49},(_,i)=>40+i); // Mi2 a Mi6
+
 async function ensureAudio(){
-  if(!audioCtx || audioCtx.state==="closed")audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(!audioCtx || audioCtx.state==="closed"){
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    soundfontCache.clear();
+  }
   if(audioCtx.state==="suspended")await audioCtx.resume();
+}
+async function loadSmplr(){
+  if(!smplrModulePromise){
+    smplrModulePromise=import("https://unpkg.com/smplr@1.1.0/dist/index.mjs");
+  }
+  return smplrModulePromise;
+}
+async function getSelectedInstrument(){
+  const type=soundType.value;
+  if(type==="sine")return null;
+  await ensureAudio();
+  if(soundfontCache.has(type))return soundfontCache.get(type);
+
+  soundStatus.textContent="Cargando "+soundType.options[soundType.selectedIndex].text+"…";
+  const {Soundfont}=await loadSmplr();
+  const instrument=Soundfont(audioCtx,{
+    instrument:type,
+    kit:"MusyngKite",
+    notesToLoad:{notes:GUITAR_SAMPLE_NOTES,fallback:"nearest"}
+  });
+  soundfontCache.set(type,instrument);
+  await instrument.ready;
+  soundStatus.textContent="Listo: "+soundType.options[soundType.selectedIndex].text;
+  return instrument;
+}
+function scheduleSineNote(m,start,dur,volume=.24){
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+  osc.type="sine";osc.frequency.setValueAtTime(freqFromMidi(m),start);
+  gain.gain.setValueAtTime(.0001,start);
+  gain.gain.exponentialRampToValueAtTime(volume,start+.025);
+  gain.gain.setValueAtTime(volume,start+Math.max(.04,dur-.06));
+  gain.gain.exponentialRampToValueAtTime(.0001,start+dur);
+  osc.connect(gain);gain.connect(audioCtx.destination);
+  osc.start(start);osc.stop(start+dur+.02);
 }
 async function playMidiSequence(midis){
   try{
     await ensureAudio();
-    const now=audioCtx.currentTime+.05,step=.58,dur=.50;
+    let instrument=null;
+    try{
+      instrument=await getSelectedInstrument();
+    }catch(loadErr){
+      soundStatus.textContent="No se pudo cargar la muestra; usando seno.";
+      instrument=null;
+    }
+
+    const now=audioCtx.currentTime+.08,step=.58,dur=.50;
     midis.forEach((m,i)=>{
       const start=now+i*step;
-      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
-      osc.type="sine";osc.frequency.setValueAtTime(freqFromMidi(m),start);
-      gain.gain.setValueAtTime(.0001,start);
-      gain.gain.exponentialRampToValueAtTime(.24,start+.025);
-      gain.gain.setValueAtTime(.24,start+dur-.06);
-      gain.gain.exponentialRampToValueAtTime(.0001,start+dur);
-      osc.connect(gain);gain.connect(audioCtx.destination);
-      osc.start(start);osc.stop(start+dur+.02);
+      if(instrument){
+        instrument.start({note:m,velocity:92,time:start,duration:dur});
+      }else{
+        scheduleSineNote(m,start,dur,.24);
+      }
 
       const delayMs=Math.max(0,(start-audioCtx.currentTime)*1000);
       setTimeout(()=>{
@@ -877,18 +939,24 @@ async function playMidiSequence(midis){
 async function playReference(){
   try{
     await ensureAudio();
-    const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
-    osc.type="sine";osc.frequency.setValueAtTime(targetFreq(),audioCtx.currentTime);
-    gain.gain.setValueAtTime(.0001,audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(.35,audioCtx.currentTime+.05);
-    gain.gain.setValueAtTime(.35,audioCtx.currentTime+1.2);
-    gain.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+1.8);
-    osc.connect(gain);gain.connect(audioCtx.destination);
-    osc.start(audioCtx.currentTime);osc.stop(audioCtx.currentTime+1.85);
+    const midi=midiFromTarget();
+    let instrument=null;
+    try{
+      instrument=await getSelectedInstrument();
+    }catch(loadErr){
+      soundStatus.textContent="No se pudo cargar la muestra; usando seno.";
+    }
+
+    if(instrument){
+      instrument.start({note:midi,velocity:96,time:audioCtx.currentTime+.03,duration:1.8});
+    }else{
+      scheduleSineNote(midi,audioCtx.currentTime+.03,1.8,.35);
+    }
     playTone.textContent="🔊 Sonando "+targetNote.value+targetOctave.value;
     setTimeout(()=>{playTone.textContent="▶ Escuchar referencia"},1900);
   }catch(err){statusEl.textContent="No se pudo reproducir la referencia: "+err.message}
 }
+
 const DAISY_THEMES=["light","dark","cupcake","bumblebee","emerald","corporate","synthwave","retro","cyberpunk","valentine","halloween","garden","forest","aqua","lofi","pastel","fantasy","wireframe","black","luxury","dracula","cmyk","autumn","business","acid","lemonade","night","coffee","winter","dim","nord","sunset","caramellatte","abyss","silk"];
 function themePreviewHTML(theme,label){
   return '<span class="theme-preview" data-theme="'+theme+'"><i></i><i></i><i></i><i></i></span><span class="theme-name">'+(label||theme)+'</span>';
@@ -942,6 +1010,9 @@ resetScore.addEventListener("click",resetExercise);
 scaleRoot.addEventListener("change",updateScaleDisplay);
 scaleType.addEventListener("change",updateScaleDisplay);
 scaleOctaves.addEventListener("change",updateScaleDisplay);
+soundType.addEventListener("change",()=>{
+  soundStatus.textContent=soundType.value==="sine"?"Seno puro listo.":"La muestra se cargará al reproducir.";
+});
 fretboardMode.addEventListener("change",()=>renderFretboard(activeScaleMidi));
 playScaleUp.addEventListener("click",()=>playMidiSequence(selectedScaleMidis()));
 playScaleDown.addEventListener("click",()=>playMidiSequence([...selectedScaleMidis()].reverse()));
