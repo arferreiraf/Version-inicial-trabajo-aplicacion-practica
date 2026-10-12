@@ -219,9 +219,24 @@ main{
 .theme-option.active{outline:1px solid var(--color-primary)}
 .target-card,.voice-card{min-height:420px;display:flex;flex-direction:column}
 .target-card .actions{margin-top:auto}
-.voice-card .stats{margin-top:auto}
 .voice-card{display:flex;flex-direction:column}
-.voice-mic{display:flex;justify-content:flex-end;margin-bottom:8px}
+.voice-mic{display:flex;justify-content:flex-end;margin-bottom:10px}
+.voice-card .status{
+  position:relative;
+  z-index:1;
+  min-height:1.5em;
+  margin:14px 0 6px;
+  line-height:1.4;
+}
+.voice-card .stats{
+  position:relative;
+  z-index:1;
+  margin-top:10px;
+}
+.voice-card .stat{
+  min-height:78px;
+}
+.voice-mic{display:flex;justify-content:flex-end;margin-bottom:10px}
 .voice-mic .primary{min-width:200px}
 h2{
   font-family:"Space Grotesk","Inter",sans-serif;
