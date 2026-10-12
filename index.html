@@ -220,7 +220,15 @@ main{
 .theme-option:hover{background:var(--color-base-200)}
 .theme-option.active{outline:1px solid var(--color-primary)}
 .target-card,.voice-card{min-height:420px;display:flex;flex-direction:column}
-.target-card .actions{margin-top:auto}
+.target-card .actions{margin-top:0}
+.target-card .target-center{
+  flex:1;
+  min-height:120px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px 0 18px;
+}
 .voice-card{display:flex;flex-direction:column}
 .voice-mic{display:flex;justify-content:flex-end;margin-bottom:10px}
 .voice-card .voice-status{
@@ -309,7 +317,7 @@ select:focus,input:focus{
   font-size:clamp(1.65rem,3vw,2.35rem);
   font-weight:700;
   text-align:center;
-  margin:18px 0;
+  margin:0;
   color:var(--color-base-content);
   text-shadow:0 0 18px rgba(255,234,97,.16);
 }
@@ -613,7 +621,9 @@ select:focus,input:focus{
         </select>
       </div>
     </div>
-    <div class="target" id="targetDisplay">Sol3 · 196.00 Hz</div>
+    <div class="target-center">
+      <div class="target" id="targetDisplay">Sol3 · 196.00 Hz</div>
+    </div>
     <div class="actions">
       <button class="secondary" id="playTone">▶ Escuchar referencia</button>
       <button class="secondary" id="resetScore">Reiniciar ejercicio</button>
