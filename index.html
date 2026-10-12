@@ -81,7 +81,8 @@ main{
   50%{transform:translateX(38%)}
 }
 .hero,.scales,.help{grid-column:1/-1}
-.hero{display:grid;grid-template-columns:1.6fr .9fr;gap:22px;align-items:center}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center}
+.hero-copy{min-width:0;padding-right:8px}
 .hero-copy h1{
   font-size:clamp(1.9rem,3vw,3rem);
   margin:0 0 8px;
@@ -93,10 +94,11 @@ main{
   text-shadow:0 0 26px rgba(255,59,212,.14);
 }
 .hero-copy p{margin:0}
-.hero-action{display:flex;justify-content:flex-end;align-items:end;gap:10px;flex-wrap:wrap}
-.theme-control{min-width:220px}
+.hero-action{display:grid;grid-template-columns:minmax(220px,260px) minmax(190px,220px);gap:12px;align-items:end;justify-content:end}
+.theme-control{min-width:0;width:100%}
 .theme-control label{margin-bottom:5px}
-#themeSelect{min-width:220px}
+#themeSelect{min-width:0;width:100%}
+.hero-action .primary{width:100%;min-width:0;white-space:nowrap}
 h2{font-size:1.05rem;margin:0 0 16px;color:#f6ecff;letter-spacing:.03em}
 p,.muted{color:var(--muted)}
 button,select,input{font:inherit}
@@ -259,12 +261,15 @@ select:focus,input:focus{
 @media(prefers-reduced-motion:reduce){
   .card::before{animation:none}
 }
+@media(max-width:1050px){
+  .hero{grid-template-columns:1fr;align-items:start}
+  .hero-action{grid-template-columns:minmax(220px,1fr) minmax(190px,220px);justify-content:stretch}
+}
 @media(max-width:900px){
   main{width:min(calc(100vw - 32px),860px);padding:18px 0 28px}
   .dashboard{grid-template-columns:1fr}
   .hero,.scales,.help{grid-column:auto}
-  .hero{grid-template-columns:1fr}
-  .hero-action{justify-content:stretch}
+  .hero-action{grid-template-columns:1fr}
   .primary{width:100%}
   .scales-layout{grid-template-columns:1fr}
 }
