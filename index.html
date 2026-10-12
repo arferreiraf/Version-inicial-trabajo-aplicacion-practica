@@ -11,7 +11,6 @@
 <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" />
 <style>
 :root{
-  color-scheme:dark;
   --bg:var(--color-base-300);
   --panel:var(--color-base-200);
   --panel-2:var(--color-base-100);
@@ -126,10 +125,16 @@ main{
   margin:0 0 10px;
   line-height:1.02;
   letter-spacing:-.045em;
-  background:linear-gradient(90deg,#fff,#ffdff7 35%,#fff0a8 70%,#fff);
+  color:var(--color-base-content);
+  background:linear-gradient(90deg,
+    var(--color-base-content),
+    color-mix(in oklab,var(--color-primary) 72%,var(--color-base-content)),
+    color-mix(in oklab,var(--color-secondary) 58%,var(--color-base-content)),
+    var(--color-base-content));
   -webkit-background-clip:text;
+  background-clip:text;
   color:transparent;
-  text-shadow:0 0 26px rgba(255,59,212,.14);
+  text-shadow:0 0 22px color-mix(in oklab,var(--color-primary) 16%,transparent);
 }
 .hero-copy p{margin:0;max-width:760px;font-size:1rem;line-height:1.65}
 .theme-control{
@@ -271,7 +276,7 @@ select:focus,input:focus{
   font-weight:700;
   text-align:center;
   margin:18px 0;
-  color:#fff7c2;
+  color:var(--color-base-content);
   text-shadow:0 0 18px rgba(255,234,97,.16);
 }
 .note{
@@ -282,23 +287,23 @@ select:focus,input:focus{
   line-height:.95;
   margin-top:12px;
   letter-spacing:-.05em;
-  color:#fff;
+  color:var(--color-base-content);
   text-shadow:0 0 18px rgba(77,232,255,.22),0 0 40px rgba(255,59,212,.12);
 }
 .freq,.cents{text-align:center}
-.freq{font-size:1.55rem;margin-top:8px;color:#dffaff}
-.cents{font-size:1.05rem;color:#d3c6df;margin-top:3px}
+.freq{font-size:1.55rem;margin-top:8px;color:color-mix(in oklab,var(--color-base-content) 88%,var(--color-info));}
+.cents{font-size:1.05rem;color:var(--muted);;margin-top:3px}
 .meter{
   position:relative;
   height:24px;
-  background:rgba(8,2,18,.92);
-  border:1px solid rgba(122,92,255,.40);
+  background:color-mix(in oklab,var(--color-base-300) 88%,var(--color-base-100));
+  border:1px solid color-mix(in oklab,var(--color-base-content) 18%,transparent);
   border-radius:999px;
   margin:22px 0 8px;
   overflow:hidden;
   box-shadow:inset 0 0 22px rgba(77,232,255,.04);
 }
-.center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#fff2a8;box-shadow:0 0 12px rgba(255,234,97,.8)}
+.center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--color-primary);box-shadow:0 0 12px color-mix(in oklab,var(--color-primary) 70%,transparent)}
 .dot{
   position:absolute;top:3px;width:16px;height:16px;border-radius:50%;
   background:var(--cyan);
@@ -309,25 +314,25 @@ select:focus,input:focus{
 .status{text-align:center;font-weight:900;margin-top:12px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
 .stat{
-  background:linear-gradient(180deg,rgba(10,3,24,.90),rgba(19,6,36,.84));
-  border:1px solid rgba(255,59,212,.18);
+  background:color-mix(in oklab,var(--color-base-100) 88%,transparent);
+  border:1px solid color-mix(in oklab,var(--color-base-content) 12%,transparent);
   border-radius:14px;
   padding:14px;
   text-align:center
 }
-.stat b{display:block;font-size:1.35rem;color:#fff7b8}.stat span{font-size:.75rem;color:var(--muted)}
+.stat b{display:block;font-size:1.35rem;color:var(--color-base-content);}.stat span{font-size:.75rem;color:var(--muted)}
 .actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{flex:1;min-width:150px}
-.good{color:#7fffd4;text-shadow:0 0 12px rgba(127,255,212,.22)}
-.warn{color:#ffe66d;text-shadow:0 0 12px rgba(255,230,109,.18)}
-.bad{color:#ff9bd9}
+.good{color:var(--color-success);text-shadow:0 0 12px color-mix(in oklab,var(--color-success) 28%,transparent)}
+.warn{color:var(--color-warning);text-shadow:0 0 12px color-mix(in oklab,var(--color-warning) 24%,transparent)}
+.bad{color:var(--color-error)}
 .scales{padding:24px}
 .scales-layout{display:grid;grid-template-columns:minmax(340px,.9fr) minmax(0,1.1fr);gap:24px;align-items:start}
 .scales-layout .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .sound-status{font-size:.8rem;color:var(--muted);margin-top:6px;min-height:1.1em}
 .scale-notes{display:flex;gap:9px;flex-wrap:wrap;margin:2px 0 14px}
 .scale-note{
-  background:rgba(10,3,24,.9);
-  border:1px solid rgba(255,234,97,.22);
+  background:color-mix(in oklab,var(--color-base-100) 90%,transparent);
+  border:1px solid color-mix(in oklab,var(--color-base-content) 14%,transparent);
   border-radius:999px;
   padding:8px 12px;
   font-weight:900;
@@ -363,14 +368,16 @@ select:focus,input:focus{
   width:100%;
   height:auto;
   border-radius:16px;
-  background:linear-gradient(180deg,rgba(8,3,18,.96),rgba(20,7,36,.92));
-  border:1px solid rgba(255,234,97,.18);
+  background:linear-gradient(180deg,
+    color-mix(in oklab,var(--color-base-300) 94%,var(--color-base-100)),
+    color-mix(in oklab,var(--color-base-200) 92%,var(--color-base-300)));
+  border:1px solid color-mix(in oklab,var(--color-base-content) 14%,transparent);
   box-shadow:inset 0 0 26px rgba(122,92,255,.08),0 0 24px rgba(255,59,212,.05);
 }
 .fret-line{stroke:rgba(255,255,255,.22);stroke-width:1}
 .fret-nut{stroke:#ffe75f;stroke-width:4}
 .fret-string{stroke:rgba(230,236,255,.48);stroke-linecap:round}
-.fret-label{fill:#8d80a2;font-size:10px;text-anchor:middle}
+.fret-label{fill:var(--color-base-content);;font-size:10px;text-anchor:middle}
 .fret-note{fill:rgba(77,232,255,.17);stroke:rgba(77,232,255,.62);stroke-width:1.3}
 .fret-note.root{fill:rgba(255,234,97,.22);stroke:#ffe75f;stroke-width:1.7}
 .fret-note.active{
@@ -379,8 +386,8 @@ select:focus,input:focus{
   stroke-width:2.5;
   filter:drop-shadow(0 0 7px #ffea61) drop-shadow(0 0 14px #ff3bd4);
 }
-.fret-note-text{fill:#effcff;font-size:9px;font-weight:900;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
-.fret-note-text.root{fill:#fff4a3}
+.fret-note-text{fill:var(--color-base-content);;font-size:9px;font-weight:900;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+.fret-note-text.root{fill:var(--color-primary-content);}
 .fret-note-text.active{fill:#241700}
 .help p{max-width:850px;margin:0}
 @media(prefers-reduced-motion:reduce){
@@ -838,7 +845,7 @@ function renderFretboard(activeMidi=null){
   const mode=fretboardMode ? fretboardMode.value : "active";
   const preferred=activeMidi!==null ? findPreferredGuitarPosition(activeMidi) : null;
 
-  const bg=svgEl("rect",{x:left,y:top,width:boardW,height:boardH,rx:12,fill:"rgba(18,6,32,.72)",stroke:"rgba(255,234,97,.12)"});
+  const bg=svgEl("rect",{x:left,y:top,width:boardW,height:boardH,rx:12,fill:"var(--color-base-300)",stroke:"color-mix(in oklab,var(--color-base-content) 14%,transparent)"});
   fretboard.appendChild(bg);
 
   for(let f=0;f<=24;f++){
