@@ -66,6 +66,7 @@ main{
     "hero hero"
     "target voice"
     "scales scales"
+    "harmony harmony"
     "help help";
   gap:18px;
   align-items:stretch
@@ -74,6 +75,7 @@ main{
 .target-card{grid-area:target}
 .voice-card{grid-area:voice}
 .scales{grid-area:scales}
+.harmony{grid-area:harmony}
 .help{grid-area:help}
 .card{
   background:color-mix(in oklab,var(--color-base-200) 86%,transparent);
@@ -417,6 +419,50 @@ select:focus,input:focus{
 .fret-note-text{fill:var(--color-base-content);;font-size:9px;font-weight:900;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
 .fret-note-text.root{fill:var(--color-primary-content);}
 .fret-note-text.active{fill:#241700}
+
+.harmony{padding:24px}
+.harmony-layout{display:grid;grid-template-columns:minmax(320px,.85fr) minmax(0,1.15fr);gap:24px;align-items:start}
+.harmony-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.harmony-display{
+  min-height:100%;
+  padding:18px;
+  border-radius:16px;
+  background:color-mix(in oklab,var(--color-base-100) 90%,transparent);
+  border:1px solid color-mix(in oklab,var(--color-base-content) 12%,transparent);
+}
+.chord-symbol{
+  font-family:"Space Grotesk","Inter",sans-serif;
+  font-size:clamp(2.2rem,5vw,4.2rem);
+  font-weight:700;
+  line-height:1;
+  letter-spacing:-.045em;
+  color:var(--color-base-content);
+  margin:2px 0 8px;
+}
+.chord-latin{font-size:1rem;color:var(--muted);margin-bottom:14px}
+.chord-notes{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.chord-note-pill{
+  padding:7px 11px;border-radius:999px;font-weight:800;
+  background:color-mix(in oklab,var(--color-primary) 16%,var(--color-base-100));
+  border:1px solid color-mix(in oklab,var(--color-primary) 38%,transparent);
+}
+.chord-formula{font-size:.9rem;color:var(--muted);margin:8px 0 16px}
+.progression-panel{margin-top:22px;padding-top:20px;border-top:1px solid color-mix(in oklab,var(--color-base-content) 12%,transparent)}
+.progression-line{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.progression-chord{
+  padding:8px 11px;border-radius:10px;font-weight:800;
+  background:color-mix(in oklab,var(--color-secondary) 15%,var(--color-base-100));
+  border:1px solid color-mix(in oklab,var(--color-secondary) 36%,transparent);
+}
+.progression-info{font-size:.88rem;color:var(--muted);line-height:1.5;margin:8px 0 14px}
+.harmony .actions{margin-top:14px}
+@media(max-width:900px){
+  .harmony-layout{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .harmony-controls{grid-template-columns:1fr}
+}
+
 .help p{max-width:850px;margin:0}
 @media(prefers-reduced-motion:reduce){
   .card::before{animation:none}
@@ -433,6 +479,7 @@ select:focus,input:focus{
       "target"
       "voice"
       "scales"
+      "harmony"
       "help";
   }
   .target-card,.voice-card{min-height:0}
@@ -584,6 +631,76 @@ select:focus,input:focus{
         <p class="hint">En modo “Solo nota activa”, el mástil queda limpio hasta que suena una nota.</p>
       </div>
       <svg id="fretboard" viewBox="0 0 1650 320" role="img" aria-label="Diapasón virtual de guitarra"></svg>
+    </div>
+  </section>
+
+
+  <section class="card harmony">
+    <h2>Acordes y armonía</h2>
+    <div class="harmony-layout">
+      <div>
+        <div class="harmony-controls">
+          <div>
+            <label for="chordRoot">Fundamental</label>
+            <select id="chordRoot">
+              <option>Do</option><option>Do♯</option><option>Re</option><option>Re♯</option>
+              <option>Mi</option><option>Fa</option><option>Fa♯</option><option selected>Sol</option>
+              <option>Sol♯</option><option>La</option><option>La♯</option><option>Si</option>
+            </select>
+          </div>
+          <div>
+            <label for="chordType">Tipo de acorde</label>
+            <select id="chordType"></select>
+          </div>
+          <div>
+            <label for="chordInversion">Posición / inversión</label>
+            <select id="chordInversion"></select>
+          </div>
+          <div>
+            <label for="chordOctave">Registro</label>
+            <select id="chordOctave">
+              <option value="2">Grave · octava 2</option>
+              <option value="3" selected>Medio · octava 3</option>
+              <option value="4">Agudo · octava 4</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="secondary" id="playChord">▶ Acorde</button>
+          <button class="secondary" id="playArpeggio">▶ Arpegio</button>
+        </div>
+      </div>
+
+      <div class="harmony-display">
+        <div class="chord-symbol" id="chordSymbol">G</div>
+        <div class="chord-latin" id="chordLatin">Sol mayor</div>
+        <div class="chord-notes" id="chordNotes"></div>
+        <div class="chord-formula" id="chordFormula"></div>
+      </div>
+    </div>
+
+    <div class="progression-panel">
+      <div class="harmony-controls">
+        <div>
+          <label for="progressionStyle">Estilo / familia</label>
+          <select id="progressionStyle">
+            <option value="jazz" selected>Jazz</option>
+            <option value="soul">Soul / Neo-soul</option>
+            <option value="blues">Blues</option>
+            <option value="pop">Pop / funcional</option>
+            <option value="modulation">Modulaciones</option>
+          </select>
+        </div>
+        <div>
+          <label for="progressionType">Cadencia / progresión</label>
+          <select id="progressionType"></select>
+        </div>
+      </div>
+      <div class="progression-line" id="progressionLine"></div>
+      <div class="progression-info" id="progressionInfo"></div>
+      <div class="actions">
+        <button class="secondary" id="playProgression">▶ Reproducir progresión</button>
+      </div>
     </div>
   </section>
 
@@ -1083,6 +1200,173 @@ async function playReference(){
   }catch(err){statusEl.textContent="No se pudo reproducir la referencia: "+err.message}
 }
 
+
+const CHORDS=[
+  {name:"Mayor",sym:"",latin:"mayor",ints:[0,4,7],formula:"1 · 3 · 5"},
+  {name:"Menor",sym:"m",latin:"menor",ints:[0,3,7],formula:"1 · ♭3 · 5"},
+  {name:"Disminuido",sym:"dim",latin:"disminuido",ints:[0,3,6],formula:"1 · ♭3 · ♭5"},
+  {name:"Aumentado",sym:"aug",latin:"aumentado",ints:[0,4,8],formula:"1 · 3 · ♯5"},
+  {name:"Sus2",sym:"sus2",latin:"suspendido 2",ints:[0,2,7],formula:"1 · 2 · 5"},
+  {name:"Sus4",sym:"sus4",latin:"suspendido 4",ints:[0,5,7],formula:"1 · 4 · 5"},
+  {name:"Sexta",sym:"6",latin:"sexta",ints:[0,4,7,9],formula:"1 · 3 · 5 · 6"},
+  {name:"Menor sexta",sym:"m6",latin:"menor sexta",ints:[0,3,7,9],formula:"1 · ♭3 · 5 · 6"},
+  {name:"Séptima dominante",sym:"7",latin:"séptima dominante",ints:[0,4,7,10],formula:"1 · 3 · 5 · ♭7"},
+  {name:"Mayor séptima",sym:"maj7",latin:"mayor séptima",ints:[0,4,7,11],formula:"1 · 3 · 5 · 7"},
+  {name:"Menor séptima",sym:"m7",latin:"menor séptima",ints:[0,3,7,10],formula:"1 · ♭3 · 5 · ♭7"},
+  {name:"Menor mayor 7",sym:"m(maj7)",latin:"menor con séptima mayor",ints:[0,3,7,11],formula:"1 · ♭3 · 5 · 7"},
+  {name:"Semidisminuido",sym:"m7♭5",latin:"semidisminuido",ints:[0,3,6,10],formula:"1 · ♭3 · ♭5 · ♭7"},
+  {name:"Disminuido 7",sym:"dim7",latin:"disminuido séptima",ints:[0,3,6,9],formula:"1 · ♭3 · ♭5 · 𝄫7"},
+  {name:"Dominante 7 sus4",sym:"7sus4",latin:"séptima suspendido 4",ints:[0,5,7,10],formula:"1 · 4 · 5 · ♭7"},
+  {name:"Add9",sym:"add9",latin:"mayor con novena añadida",ints:[0,4,7,14],formula:"1 · 3 · 5 · 9"},
+  {name:"Menor add9",sym:"m(add9)",latin:"menor con novena añadida",ints:[0,3,7,14],formula:"1 · ♭3 · 5 · 9"},
+  {name:"Novena dominante",sym:"9",latin:"novena dominante",ints:[0,4,7,10,14],formula:"1 · 3 · 5 · ♭7 · 9"},
+  {name:"Mayor novena",sym:"maj9",latin:"mayor novena",ints:[0,4,7,11,14],formula:"1 · 3 · 5 · 7 · 9"},
+  {name:"Menor novena",sym:"m9",latin:"menor novena",ints:[0,3,7,10,14],formula:"1 · ♭3 · 5 · ♭7 · 9"},
+  {name:"7♭9",sym:"7♭9",latin:"séptima con novena bemol",ints:[0,4,7,10,13],formula:"1 · 3 · 5 · ♭7 · ♭9"},
+  {name:"7♯9",sym:"7♯9",latin:"séptima con novena aumentada",ints:[0,4,7,10,15],formula:"1 · 3 · 5 · ♭7 · ♯9"},
+  {name:"11",sym:"11",latin:"oncena dominante",ints:[0,4,7,10,14,17],formula:"1 · 3 · 5 · ♭7 · 9 · 11"},
+  {name:"Menor 11",sym:"m11",latin:"menor oncena",ints:[0,3,7,10,14,17],formula:"1 · ♭3 · 5 · ♭7 · 9 · 11"},
+  {name:"13",sym:"13",latin:"trecena dominante",ints:[0,4,7,10,14,21],formula:"1 · 3 · 5 · ♭7 · 9 · 13"},
+  {name:"Mayor 13",sym:"maj13",latin:"mayor trecena",ints:[0,4,7,11,14,21],formula:"1 · 3 · 5 · 7 · 9 · 13"},
+  {name:"Menor 13",sym:"m13",latin:"menor trecena",ints:[0,3,7,10,14,21],formula:"1 · ♭3 · 5 · ♭7 · 9 · 13"},
+  {name:"7♯11",sym:"7♯11",latin:"séptima con oncena aumentada",ints:[0,4,7,10,14,18],formula:"1 · 3 · 5 · ♭7 · 9 · ♯11"},
+  {name:"Maj7♯11",sym:"maj7♯11",latin:"mayor séptima con oncena aumentada",ints:[0,4,7,11,14,18],formula:"1 · 3 · 5 · 7 · 9 · ♯11"},
+  {name:"7alt",sym:"7alt",latin:"dominante alterado",ints:[0,4,10,13,15,18],formula:"1 · 3 · ♭7 · ♭9 · ♯9 · ♯11"}
+];
+const AMERICAN_NAMES=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+const LATIN_NAMES=NOTE_NAMES;
+const chordRoot=$("chordRoot"),chordType=$("chordType"),chordInversion=$("chordInversion"),chordOctave=$("chordOctave"),
+chordSymbol=$("chordSymbol"),chordLatin=$("chordLatin"),chordNotes=$("chordNotes"),chordFormula=$("chordFormula"),
+playChordBtn=$("playChord"),playArpeggioBtn=$("playArpeggio"),progressionStyle=$("progressionStyle"),
+progressionType=$("progressionType"),progressionLine=$("progressionLine"),progressionInfo=$("progressionInfo"),
+playProgressionBtn=$("playProgression");
+
+const PROGRESSIONS={
+  jazz:[
+    {name:"ii–V–I mayor",steps:[[2,"m7"],[7,"7"],[0,"maj7"]],info:"La cadencia funcional esencial del jazz. Practica conducción de voces entre 3ª y 7ª."},
+    {name:"iiø–V–i menor",steps:[[2,"m7♭5"],[7,"7♭9"],[0,"m(maj7)"]],info:"Resolución menor clásica: ii semidisminuido, V alterado y tónica menor."},
+    {name:"Turnaround I–vi–ii–V",steps:[[0,"maj7"],[9,"m7"],[2,"m7"],[7,"7"]],info:"Turnaround básico de estándares; conecta el final con un nuevo comienzo."},
+    {name:"Turnaround III–VI–ii–V",steps:[[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],info:"Variante con dominante secundario en VI para mayor impulso hacia ii–V."},
+    {name:"Rhythm changes A",steps:[[0,"maj7"],[9,"7"],[2,"m7"],[7,"7"],[4,"m7"],[9,"7"],[2,"m7"],[7,"7"]],info:"Esqueleto funcional frecuente de la sección A de rhythm changes."},
+    {name:"Coltrane changes (ciclo mayor)",steps:[[0,"maj7"],[3,"7"],[8,"maj7"],[11,"7"],[4,"maj7"],[7,"7"],[0,"maj7"]],info:"Movimiento por centros mayores separados por terceras mayores, enlazados por dominantes."}
+  ],
+  soul:[
+    {name:"Neo-soul I–iii–IV–iv",steps:[[0,"maj9"],[4,"m9"],[5,"maj9"],[5,"m9"]],info:"Color neo-soul por intercambio modal: IV mayor pasa a iv menor."},
+    {name:"Soul I–vi–IV–V",steps:[[0,"maj7"],[9,"m7"],[5,"maj7"],[7,"9"]],info:"Progresión soul clásica enriquecida con séptimas y novenas."},
+    {name:"R&B ii–V–iii–vi",steps:[[2,"m9"],[7,"13"],[4,"m9"],[9,"m9"]],info:"Movimiento suave y circular, muy útil para practicar voice leading."}
+  ],
+  blues:[
+    {name:"Jazz blues",steps:[[0,"7"],[5,"7"],[0,"7"],[0,"7"],[5,"7"],[5,"7"],[0,"7"],[9,"7"],[2,"m7"],[7,"7"],[0,"7"],[7,"7"]],info:"Blues de 12 compases con ii–V de cierre."},
+    {name:"Minor blues",steps:[[0,"m7"],[5,"m7"],[0,"m7"],[0,"m7"],[5,"m7"],[5,"m7"],[0,"m7"],[9,"m7♭5"],[2,"m7♭5"],[7,"7♭9"],[0,"m7"],[7,"7♭9"]],info:"Blues menor con dominantes alterados para resolver a i."}
+  ],
+  pop:[
+    {name:"I–V–vi–IV",steps:[[0,""],[7,""],[9,"m"],[5,""]],info:"Una de las progresiones funcionales más usadas en pop."},
+    {name:"vi–IV–I–V",steps:[[9,"m"],[5,""],[0,""],[7,""]],info:"Mismos grados con sensación de inicio menor."},
+    {name:"I–vi–IV–V",steps:[[0,""],[9,"m"],[5,""],[7,""]],info:"Cadencia doo-wop / pop clásica."}
+  ],
+  modulation:[
+    {name:"ii–V hacia ♭III",steps:[[5,"m7"],[10,"7"],[3,"maj7"]],info:"Modulación por ii–V a un centro un tono y medio por encima."},
+    {name:"ii–V hacia III",steps:[[6,"m7"],[11,"7"],[4,"maj7"]],info:"Cadena ii–V dirigida al centro mayor a distancia de tercera."},
+    {name:"Dominantes por quintas",steps:[[4,"7"],[9,"7"],[2,"7"],[7,"7"],[0,"maj7"]],info:"Cadena de dominantes descendiendo por quintas hasta la tónica."}
+  ]
+};
+
+function chordBySym(sym){return CHORDS.find(c=>c.sym===sym)||CHORDS[0]}
+function initHarmony(){
+  CHORDS.forEach((c,i)=>{const o=document.createElement("option");o.value=i;o.textContent=c.name+(c.sym?" · "+c.sym:"");chordType.appendChild(o)});
+  chordType.value="9";
+  updateInversions();
+  updateProgressionTypes();
+  updateHarmonyDisplay();
+}
+function updateInversions(){
+  const c=CHORDS[Number(chordType.value)]||CHORDS[0],prev=Number(chordInversion.value)||0;
+  chordInversion.innerHTML="";
+  c.ints.forEach((_,i)=>{
+    const o=document.createElement("option");o.value=i;
+    o.textContent=i===0?"Posición fundamental":i+"ª inversión";
+    chordInversion.appendChild(o);
+  });
+  chordInversion.value=String(Math.min(prev,c.ints.length-1));
+}
+function chordMidis(rootName=chordRoot.value,chord=CHORDS[Number(chordType.value)]||CHORDS[0],inv=Number(chordInversion.value)||0,oct=Number(chordOctave.value)||3){
+  const rootMidi=(oct+1)*12+NOTE_INDEX[rootName];
+  const midis=chord.ints.map(x=>rootMidi+x);
+  for(let i=0;i<inv;i++)midis[i]+=12;
+  return midis.sort((a,b)=>a-b);
+}
+function updateHarmonyDisplay(){
+  const c=CHORDS[Number(chordType.value)]||CHORDS[0],rootPc=NOTE_INDEX[chordRoot.value],midis=chordMidis();
+  chordSymbol.textContent=AMERICAN_NAMES[rootPc]+c.sym;
+  chordLatin.textContent=LATIN_NAMES[rootPc]+" "+c.latin+(Number(chordInversion.value)? " · "+chordInversion.options[chordInversion.selectedIndex].text.toLowerCase():"");
+  chordNotes.innerHTML="";
+  midis.forEach(m=>{const x=document.createElement("span");x.className="chord-note-pill";x.textContent=noteNameFromMidi(m);chordNotes.appendChild(x)});
+  chordFormula.textContent="Fórmula: "+c.formula+" · Registro: "+noteNameFromMidi(midis[0])+" – "+noteNameFromMidi(midis[midis.length-1]);
+}
+async function playChordMidis(midis,duration=1.65){
+  await ensureAudio();
+  let instrument=null;
+  try{instrument=await getSelectedInstrument()}catch(e){instrument=null}
+  const t=audioCtx.currentTime+.06;
+  midis.forEach(m=>{
+    if(instrument)instrument.start({note:m,velocity:86,time:t,duration});
+    else scheduleSineNote(m,t,duration,.12);
+  });
+}
+async function playArpeggioMidis(midis){
+  await ensureAudio();
+  let instrument=null;
+  try{instrument=await getSelectedInstrument()}catch(e){instrument=null}
+  const t=audioCtx.currentTime+.06;
+  midis.forEach((m,i)=>{
+    const st=t+i*.34;
+    if(instrument)instrument.start({note:m,velocity:88,time:st,duration:.75});
+    else scheduleSineNote(m,st,.75,.16);
+  });
+}
+function updateProgressionTypes(){
+  const arr=PROGRESSIONS[progressionStyle.value]||[];
+  progressionType.innerHTML="";
+  arr.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p.name;progressionType.appendChild(o)});
+  renderProgression();
+}
+function progressionChordData(){
+  const p=(PROGRESSIONS[progressionStyle.value]||[])[Number(progressionType.value)||0];
+  if(!p)return [];
+  const tonic=NOTE_INDEX[chordRoot.value];
+  return p.steps.map(([off,sym])=>{
+    const pc=(tonic+off)%12,c=chordBySym(sym);
+    return {pc,c,label:AMERICAN_NAMES[pc]+sym};
+  });
+}
+function renderProgression(){
+  const p=(PROGRESSIONS[progressionStyle.value]||[])[Number(progressionType.value)||0];
+  progressionLine.innerHTML="";
+  if(!p){progressionInfo.textContent="";return}
+  progressionChordData().forEach(x=>{const el=document.createElement("span");el.className="progression-chord";el.textContent=x.label;progressionLine.appendChild(el)});
+  progressionInfo.textContent=p.info+" · Tonalidad de referencia: "+chordRoot.value;
+}
+async function playSelectedProgression(){
+  try{
+    await ensureAudio();
+    let instrument=null;
+    try{instrument=await getSelectedInstrument()}catch(e){instrument=null}
+    const data=progressionChordData(),baseOct=Math.max(2,Number(chordOctave.value)||3),start=audioCtx.currentTime+.08,step=1.35;
+    data.forEach((x,i)=>{
+      const rootName=NOTE_NAMES[x.pc],midis=chordMidis(rootName,x.c,0,baseOct);
+      const t=start+i*step;
+      midis.forEach(m=>{
+        if(instrument)instrument.start({note:m,velocity:82,time:t,duration:1.05});
+        else scheduleSineNote(m,t,1.05,.10);
+      });
+      setTimeout(()=>{
+        [...progressionLine.children].forEach((el,j)=>el.style.outline=j===i?"2px solid var(--color-primary)":"");
+      },Math.max(0,(t-audioCtx.currentTime)*1000));
+    });
+    setTimeout(()=>[...progressionLine.children].forEach(el=>el.style.outline=""),(data.length*step+1)*1000);
+  }catch(err){statusEl.textContent="No se pudo reproducir la progresión: "+err.message}
+}
+
 const DAISY_THEMES=["light","dark","cupcake","bumblebee","emerald","corporate","synthwave","retro","cyberpunk","valentine","halloween","garden","forest","aqua","lofi","pastel","fantasy","wireframe","black","luxury","dracula","cmyk","autumn","business","acid","lemonade","night","coffee","winter","dim","nord","sunset","caramellatte","abyss","silk"];
 function themePreviewHTML(theme,label){
   return '<span class="theme-preview" data-theme="'+theme+'"><i></i><i></i><i></i><i></i></span><span class="theme-name">'+(label||theme)+'</span>';
@@ -1128,6 +1412,17 @@ document.addEventListener("click",e=>{
   }
 });
 
+
+chordRoot.addEventListener("change",()=>{updateHarmonyDisplay();renderProgression()});
+chordType.addEventListener("change",()=>{updateInversions();updateHarmonyDisplay()});
+chordInversion.addEventListener("change",updateHarmonyDisplay);
+chordOctave.addEventListener("change",updateHarmonyDisplay);
+playChordBtn.addEventListener("click",()=>playChordMidis(chordMidis()));
+playArpeggioBtn.addEventListener("click",()=>playArpeggioMidis(chordMidis()));
+progressionStyle.addEventListener("change",updateProgressionTypes);
+progressionType.addEventListener("change",renderProgression);
+playProgressionBtn.addEventListener("click",playSelectedProgression);
+
 startBtn.addEventListener("click",toggleMic);
 targetNote.addEventListener("change",updateTarget);
 targetOctave.addEventListener("change",updateTarget);
@@ -1144,6 +1439,7 @@ playScaleUp.addEventListener("click",()=>playMidiSequence(selectedScaleMidis()))
 playScaleDown.addEventListener("click",()=>playMidiSequence([...selectedScaleMidis()].reverse()));
 playScaleBoth.addEventListener("click",()=>{const a=selectedScaleMidis();playMidiSequence([...a,...a.slice(0,-1).reverse()])});
 initScales();
+initHarmony();
 updateTarget();
 renderFretboard(null);
 </script>
