@@ -803,8 +803,14 @@ function initScales(){
   SCALES.forEach((s,i)=>{const o=document.createElement("option");o.value=i;o.textContent=s[0];scaleType.appendChild(o)});
   scaleType.value="0";updateScaleDisplay();
 }
+function lowestRootOnSixthString(){
+  const lowE=GUITAR_OPEN_MIDI[0]; // Mi2 = MIDI 40
+  const rootPc=NOTE_INDEX[scaleRoot.value];
+  const delta=(rootPc-(lowE%12)+12)%12;
+  return lowE+delta;
+}
 function selectedScaleMidis(){
-  const rootMidi=(3+1)*12+NOTE_INDEX[scaleRoot.value];
+  const rootMidi=lowestRootOnSixthString();
   const intervals=SCALES[Number(scaleType.value)][1];
   const octaves=Math.max(1,Math.min(3,Number(scaleOctaves.value)||1));
   const oneOctave=intervals.filter(x=>x<12);
@@ -820,7 +826,7 @@ function updateScaleDisplay(){
   scaleNotes.innerHTML="";
   midis.forEach(m=>{const span=document.createElement("span");span.className="scale-note";span.textContent=noteNameFromMidi(m);scaleNotes.appendChild(span)});
   const octaves=Number(scaleOctaves.value)||1;
-  scaleMeta.textContent=scale[0]+" en "+scaleRoot.value+" · "+octaves+" "+(octaves===1?"octava":"octavas")+" · "+midis.length+" notas";
+  scaleMeta.textContent=scale[0]+" en "+scaleRoot.value+" · inicia en "+noteNameFromMidi(midis[0])+" sobre la 6ª cuerda · "+octaves+" "+(octaves===1?"octava":"octavas")+" · "+midis.length+" notas";
   renderFretboard(activeScaleMidi);
 }
 async function ensureAudio(){
