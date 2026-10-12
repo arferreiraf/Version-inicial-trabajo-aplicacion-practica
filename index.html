@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>Afinador vocal en tiempo real</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0;font-family:system-ui,-apple-system,sans-serif;background:#111827;color:#f9fafb;display:flex;min-height:100vh;align-items:center;justify-content:center; }
+  .card { width:min(92vw,560px);background:#1f2937;border-radius:24px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35); }
+  h1{margin:0 0 8px;font-size:1.6rem} p{color:#cbd5e1}
+  button{width:100%;padding:16px;border:0;border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;background:#f9fafb;color:#111827}
+  .note{font-size:5rem;font-weight:800;text-align:center;margin:18px 0 0}.freq{font-size:1.6rem;text-align:center;color:#e5e7eb}.cents{font-size:1.2rem;text-align:center;margin-top:6px}
+  .meter{position:relative;height:18px;background:#374151;border-radius:999px;margin-top:20px;overflow:hidden}.center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#fff;opacity:.8}
+  .dot{position:absolute;top:2px;width:14px;height:14px;border-radius:50%;background:#f9fafb;transform:translateX(-50%);left:50%;transition:left .08s linear}
+  .status{margin-top:18px;font-size:.95rem;color:#94a3b8;text-align:center}.small{font-size:.85rem;color:#94a3b8;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Afinador vocal</h1>
+<p>Canta una nota sostenida. El sistema estima frecuencia, nota y desviación en cents.</p>
+<button id="startBtn">Activar micrófono</button>
+<div class="note" id="note">—</div>
+<div class="freq" id="freq">— Hz</div>
+<div class="cents" id="cents">— cents</div>
+<div class="meter"><div class="center"></div><div class="dot" id="dot"></div></div>
+<div class="status" id="status">Micrófono inactivo</div>
+<p class="small">Referencia: La4 = 440 Hz. Para mayor estabilidad, canta una vocal sostenida como “aaaa”.</p>
+</div>
+<script>
+const NOTE_NAMES=["Do","Do♯","Re","Re♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];
+const startBtn=document.getElementById("startBtn"),noteEl=document.getElementById("note"),freqEl=document.getElementById("freq"),centsEl=document.getElementById("cents"),dotEl=document.getElementById("dot"),statusEl=document.getElementById("status");
+let audioCtx,analyser,source,stream,running=false,buffer;
+function frequencyToNote(freq){const midi=69+12*Math.log2(freq/440),nearest=Math.round(midi),ref=440*Math.pow(2,(nearest-69)/12),cents=1200*Math.log2(freq/ref),name=NOTE_NAMES[(nearest%12+12)%12],octave=Math.floor(nearest/12)-1;return{name,octave,ref,cents}}
+function autoCorrelate(buf,sampleRate){let SIZE=buf.length,rms=0;for(let i=0;i<SIZE;i++)rms+=buf[i]*buf[i];rms=Math.sqrt(rms/SIZE);if(rms<0.01)return-1;let r1=0,r2=SIZE-1,thres=.2;for(let i=0;i<SIZE/2;i++){if(Math.abs(buf[i])<thres){r1=i;break}}for(let i=1;i<SIZE/2;i++){if(Math.abs(buf[SIZE-i])<thres){r2=SIZE-i;break}}buf=buf.slice(r1,r2);SIZE=buf.length;const c=new Array(SIZE).fill(0);for(let i=0;i<SIZE;i++)for(let j=0;j<SIZE-i;j++)c[i]+=buf[j]*buf[j+i];let d=0;while(d+1<SIZE&&c[d]>c[d+1])d++;let maxval=-1,maxpos=-1;for(let i=d;i<SIZE;i++){if(c[i]>maxval){maxval=c[i];maxpos=i}}if(maxpos<=0)return-1;let T0=maxpos;if(T0>0&&T0<SIZE-1){const x1=c[T0-1],x2=c[T0],x3=c[T0+1],a=(x1+x3-2*x2)/2,b=(x3-x1)/2;if(a!==0)T0=T0-b/(2*a)}const freq=sampleRate/T0;if(freq<70||freq>1200)return-1;return freq}
+function update(){if(!running)return;analyser.getFloatTimeDomainData(buffer);const freq=autoCorrelate(buffer,audioCtx.sampleRate);if(freq>0){const info=frequencyToNote(freq);noteEl.textContent=info.name+info.octave;freqEl.textContent=freq.toFixed(2)+" Hz";centsEl.textContent=(info.cents>=0?"+":"")+info.cents.toFixed(1)+" cents";const clamped=Math.max(-50,Math.min(50,info.cents));dotEl.style.left=(50+clamped)+"%";statusEl.textContent=Math.abs(info.cents)<5?"Muy afinado":info.cents<0?"Un poco bajo":"Un poco alto"}else{noteEl.textContent="—";freqEl.textContent="— Hz";centsEl.textContent="— cents";statusEl.textContent="Esperando una nota estable…";dotEl.style.left="50%"}requestAnimationFrame(update)}
+startBtn.addEventListener("click",async()=>{try{if(!running){stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});audioCtx=new(window.AudioContext||window.webkitAudioContext)();analyser=audioCtx.createAnalyser();analyser.fftSize=4096;buffer=new Float32Array(analyser.fftSize);source=audioCtx.createMediaStreamSource(stream);source.connect(analyser);running=true;startBtn.textContent="Detener";statusEl.textContent="Micrófono activo";update()}else{running=false;if(stream)stream.getTracks().forEach(t=>t.stop());if(audioCtx)await audioCtx.close();startBtn.textContent="Activar micrófono";statusEl.textContent="Micrófono inactivo";noteEl.textContent="—";freqEl.textContent="— Hz";centsEl.textContent="— cents";dotEl.style.left="50%"}}catch(err){console.error(err);statusEl.textContent="No se pudo acceder al micrófono: "+err.message}});
+</script>
+</body>
+</html>
