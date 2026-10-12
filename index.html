@@ -44,7 +44,13 @@ body{
 .hex-grid-line{stroke:rgba(255,232,96,.12);stroke-width:1;fill:rgba(9,3,20,.22)}
 .hex-glow{fill:none;stroke:#ffe860;stroke-width:1.4;opacity:0;filter:url(#hexGlow)}
 .hex-hot{fill:rgba(255,232,96,.035);stroke:rgba(255,232,96,.32)}
-main{width:min(94vw,1180px);margin:0 auto;padding:28px 18px 40px;position:relative;z-index:1}
+main{
+  width:min(calc(100vw - 100px),1180px);
+  margin:0 auto;
+  padding:28px 0 40px;
+  position:relative;
+  z-index:1
+}
 .dashboard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
 .card{
   background:linear-gradient(180deg,rgba(24,8,47,.80),rgba(12,6,27,.86));
@@ -248,7 +254,7 @@ select:focus,input:focus{
   .card::before{animation:none}
 }
 @media(max-width:900px){
-  main{width:min(96vw,860px);padding:18px 12px 28px}
+  main{width:min(calc(100vw - 32px),860px);padding:18px 0 28px}
   .dashboard{grid-template-columns:1fr}
   .hero,.scales,.help{grid-column:auto}
   .hero{grid-template-columns:1fr}
@@ -257,6 +263,7 @@ select:focus,input:focus{
   .scales-layout{grid-template-columns:1fr}
 }
 @media(max-width:560px){
+  main{width:calc(100vw - 20px)}
   .grid,.stats{grid-template-columns:1fr}
   .card{padding:18px}
   .actions{flex-direction:column}
