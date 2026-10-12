@@ -639,17 +639,23 @@ function rebuildHexBackground(){
 function animateHexBackground(ts){
   if(!hexBg)return;
   const w=window.innerWidth,h=window.innerHeight;
-  if(ts-lastGlowTarget>5600){
-    targetGlowX=w*(.12+Math.random()*.76);
-    targetGlowY=h*(.10+Math.random()*.80);
-    targetGlowAngle=(-.55+Math.random()*1.10);
+  if(ts-lastGlowTarget>4200){
+    const useLeft=Math.random()<0.5;
+    const sideBand=useLeft
+      ? w*(.035+Math.random()*.16)
+      : w*(.805+Math.random()*.16);
+
+    // Prioriza los laterales, pero ocasionalmente permite cruzar detrás del contenido.
+    targetGlowX=Math.random()<0.78 ? sideBand : w*(.18+Math.random()*.64);
+    targetGlowY=h*(.08+Math.random()*.84);
+    targetGlowAngle=(-.48+Math.random()*.96);
     lastGlowTarget=ts;
   }
 
-  // Movimiento deliberadamente lento y amortiguado.
-  glowX+=(targetGlowX-glowX)*0.0027;
-  glowY+=(targetGlowY-glowY)*0.0027;
-  glowAngle+=(targetGlowAngle-glowAngle)*0.0018;
+  // Algo más rápido, pero todavía suave.
+  glowX+=(targetGlowX-glowX)*0.0042;
+  glowY+=(targetGlowY-glowY)*0.0042;
+  glowAngle+=(targetGlowAngle-glowAngle)*0.0026;
 
   const ca=Math.cos(glowAngle),sa=Math.sin(glowAngle);
 
