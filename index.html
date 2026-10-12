@@ -27,45 +27,24 @@ body{
   min-height:100vh;
   overflow-x:hidden;
   background:
-    radial-gradient(circle at 18% 16%,rgba(255,59,212,.12),transparent 26%),
-    radial-gradient(circle at 78% 24%,rgba(77,232,255,.10),transparent 24%),
+    radial-gradient(circle at 18% 16%,rgba(255,59,212,.10),transparent 26%),
+    radial-gradient(circle at 78% 24%,rgba(77,232,255,.08),transparent 24%),
     linear-gradient(180deg,#080211 0%,#0b0319 46%,#120426 100%);
   position:relative;
 }
-body::before{
-  content:"";
+#hex-bg{
   position:fixed;
-  inset:-20%;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:0;
   pointer-events:none;
-  opacity:.32;
-  background-image:
-    linear-gradient(30deg,rgba(255,234,97,.12) 12%,transparent 12.5%,transparent 87%,rgba(255,234,97,.12) 87.5%,rgba(255,234,97,.12)),
-    linear-gradient(150deg,rgba(255,234,97,.12) 12%,transparent 12.5%,transparent 87%,rgba(255,234,97,.12) 87.5%,rgba(255,234,97,.12)),
-    linear-gradient(30deg,rgba(255,234,97,.12) 12%,transparent 12.5%,transparent 87%,rgba(255,234,97,.12) 87.5%,rgba(255,234,97,.12)),
-    linear-gradient(150deg,rgba(255,234,97,.12) 12%,transparent 12.5%,transparent 87%,rgba(255,234,97,.12) 87.5%,rgba(255,234,97,.12)),
-    linear-gradient(60deg,rgba(255,59,212,.08) 25%,transparent 25.5%,transparent 75%,rgba(255,59,212,.08) 75%,rgba(255,59,212,.08));
-  background-size:84px 146px;
-  background-position:0 0,0 0,42px 73px,42px 73px,0 0;
-  transform:perspective(900px) rotateX(58deg) translateY(4%);
-  transform-origin:center bottom;
-  animation:gridDrift 18s linear infinite;
+  opacity:.78;
 }
-body::after{
-  content:"";
-  position:fixed;
-  inset:-30% -20%;
-  pointer-events:none;
-  background:linear-gradient(100deg,transparent 0 36%,rgba(255,234,97,.04) 44%,rgba(255,234,97,.20) 50%,rgba(255,234,97,.04) 56%,transparent 64%);
-  filter:blur(12px);
-  animation:lightSweep 9s ease-in-out infinite alternate;
-}
-@keyframes gridDrift{
-  0%{background-position:0 0,0 0,42px 73px,42px 73px,0 0}
-  50%{background-position:20px 12px,20px 12px,62px 85px,62px 85px,20px 12px}
-  100%{background-position:0 0,0 0,42px 73px,42px 73px,0 0}
-}
-@keyframes lightSweep{
-  0%{transform:translateX(-18%) translateY(-2%)}
+.hex-grid-line{stroke:rgba(255,232,96,.12);stroke-width:1;fill:rgba(9,3,20,.22)}
+.hex-glow{fill:none;stroke:#ffe860;stroke-width:1.4;opacity:0;filter:url(#hexGlow)}
+.hex-hot{fill:rgba(255,232,96,.035);stroke:rgba(255,232,96,.32)}
+
   50%{transform:translateX(7%) translateY(2%)}
   100%{transform:translateX(22%) translateY(-1%)}
 }
@@ -261,7 +240,7 @@ select:focus,input:focus{
 .fret-note-text.active{fill:#241700}
 .help p{max-width:850px;margin:0}
 @media(prefers-reduced-motion:reduce){
-  body::before,body::after,.card::before{animation:none}
+  .card::before{animation:none}
 }
 @media(max-width:900px){
   main{width:min(96vw,860px);padding:18px 12px 28px}
@@ -281,6 +260,7 @@ select:focus,input:focus{
 </style>
 </head>
 <body>
+<svg id="hex-bg" aria-hidden="true"></svg>
 <main>
 <div class="dashboard">
   <section class="card hero">
@@ -385,6 +365,95 @@ select:focus,input:focus{
 </main>
 
 <script>
+const HEX_NS="http://www.w3.org/2000/svg";
+const hexBg=document.getElementById("hex-bg");
+let hexCells=[],glowX=0,glowY=0,targetGlowX=0,targetGlowY=0,lastGlowTarget=0;
+
+function hexPoints(cx,cy,r){
+  const pts=[];
+  for(let i=0;i<6;i++){
+    const a=(Math.PI/180)*(60*i-30);
+    pts.push((cx+r*Math.cos(a)).toFixed(2)+","+(cy+r*Math.sin(a)).toFixed(2));
+  }
+  return pts.join(" ");
+}
+
+function rebuildHexBackground(){
+  if(!hexBg)return;
+  const w=window.innerWidth,h=window.innerHeight;
+  hexBg.setAttribute("viewBox","0 0 "+w+" "+h);
+  hexBg.innerHTML="";
+  hexCells=[];
+
+  const defs=document.createElementNS(HEX_NS,"defs");
+  const filter=document.createElementNS(HEX_NS,"filter");
+  filter.setAttribute("id","hexGlow");
+  filter.setAttribute("x","-100%");filter.setAttribute("y","-100%");
+  filter.setAttribute("width","300%");filter.setAttribute("height","300%");
+  const blur=document.createElementNS(HEX_NS,"feGaussianBlur");
+  blur.setAttribute("stdDeviation","3.8");blur.setAttribute("result","blur");
+  const merge=document.createElementNS(HEX_NS,"feMerge");
+  const n1=document.createElementNS(HEX_NS,"feMergeNode");n1.setAttribute("in","blur");
+  const n2=document.createElementNS(HEX_NS,"feMergeNode");n2.setAttribute("in","SourceGraphic");
+  merge.append(n1,n2);filter.append(blur,merge);defs.append(filter);hexBg.append(defs);
+
+  const baseR=Math.max(34,Math.min(54,w/28));
+  const hexW=Math.sqrt(3)*baseR;
+  const rowH=1.5*baseR;
+  let row=0;
+
+  for(let y=-baseR;y<h+baseR;y+=rowH,row++){
+    const xOffset=(row%2)*hexW/2;
+    for(let x=-hexW+xOffset;x<w+hexW;x+=hexW){
+      const variation=0.82+Math.random()*0.34;
+      const r=baseR*variation;
+      const p=document.createElementNS(HEX_NS,"polygon");
+      p.setAttribute("points",hexPoints(x,y,r));
+      p.setAttribute("class","hex-grid-line");
+      p.dataset.cx=x;p.dataset.cy=y;
+      p.dataset.phase=(Math.random()*Math.PI*2).toFixed(4);
+      p.dataset.speed=(0.6+Math.random()*0.8).toFixed(3);
+      hexBg.append(p);
+      hexCells.push(p);
+    }
+  }
+  glowX=w*.25; glowY=h*.3; targetGlowX=w*.7; targetGlowY=h*.6;
+}
+
+function animateHexBackground(ts){
+  if(!hexBg)return;
+  const w=window.innerWidth,h=window.innerHeight;
+  if(ts-lastGlowTarget>2400){
+    targetGlowX=Math.random()*w;
+    targetGlowY=Math.random()*h;
+    lastGlowTarget=ts;
+  }
+  glowX+=(targetGlowX-glowX)*0.008;
+  glowY+=(targetGlowY-glowY)*0.008;
+
+  hexCells.forEach(p=>{
+    const x=Number(p.dataset.cx),y=Number(p.dataset.cy);
+    const d=Math.hypot(x-glowX,y-glowY);
+    const pulse=(Math.sin(ts*0.0012*Number(p.dataset.speed)+Number(p.dataset.phase))+1)/2;
+    const influence=Math.max(0,1-d/260);
+    const opacity=0.08+influence*0.58*(0.55+0.45*pulse);
+    p.style.stroke="rgba(255,232,96,"+opacity.toFixed(3)+")";
+    p.style.fill="rgba(20,5,35,"+(0.16+influence*.10).toFixed(3)+")";
+    p.style.filter=influence>.35 ? "drop-shadow(0 0 "+(2+8*influence).toFixed(1)+"px rgba(255,232,96,"+(0.20*influence).toFixed(3)+"))" : "none";
+  });
+  requestAnimationFrame(animateHexBackground);
+}
+
+let resizeHexTimer;
+window.addEventListener("resize",()=>{
+  clearTimeout(resizeHexTimer);
+  resizeHexTimer=setTimeout(rebuildHexBackground,140);
+});
+rebuildHexBackground();
+if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+  requestAnimationFrame(animateHexBackground);
+}
+
 const NOTE_NAMES=["Do","Do♯","Re","Re♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];
 const NOTE_INDEX=Object.fromEntries(NOTE_NAMES.map((n,i)=>[n,i]));
 const SCALES=[
