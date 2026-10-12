@@ -583,6 +583,7 @@ select:focus,input:focus{
 const HEX_NS="http://www.w3.org/2000/svg";
 const hexBg=document.getElementById("hex-bg");
 let hexCells=[],glowX=0,glowY=0,targetGlowX=0,targetGlowY=0,lastGlowTarget=0;
+let glowAngle=-0.35,targetGlowAngle=-0.35,haloLong=260,haloShort=80;
 
 function hexPoints(cx,cy,r){
   const pts=[];
@@ -615,6 +616,8 @@ function rebuildHexBackground(){
   const baseR=Math.max(34,Math.min(54,w/28));
   const hexW=Math.sqrt(3)*baseR;
   const rowH=1.5*baseR;
+  haloShort=hexW*.78;      // ~1.5 hexágonos de ancho total
+  haloLong=rowH*2.8;       // ~5.5–6 hexágonos de largo total
   let row=0;
 
   for(let y=-baseR;y<h+baseR;y+=rowH,row++){
@@ -636,32 +639,45 @@ function rebuildHexBackground(){
 function animateHexBackground(ts){
   if(!hexBg)return;
   const w=window.innerWidth,h=window.innerHeight;
-  if(ts-lastGlowTarget>2400){
-    targetGlowX=Math.random()*w;
-    targetGlowY=Math.random()*h;
+  if(ts-lastGlowTarget>5600){
+    targetGlowX=w*(.12+Math.random()*.76);
+    targetGlowY=h*(.10+Math.random()*.80);
+    targetGlowAngle=(-.55+Math.random()*1.10);
     lastGlowTarget=ts;
   }
-  glowX+=(targetGlowX-glowX)*0.008;
-  glowY+=(targetGlowY-glowY)*0.008;
+
+  // Movimiento deliberadamente lento y amortiguado.
+  glowX+=(targetGlowX-glowX)*0.0027;
+  glowY+=(targetGlowY-glowY)*0.0027;
+  glowAngle+=(targetGlowAngle-glowAngle)*0.0018;
+
+  const ca=Math.cos(glowAngle),sa=Math.sin(glowAngle);
 
   hexCells.forEach(p=>{
     const x=Number(p.dataset.cx),y=Number(p.dataset.cy);
-    const d=Math.hypot(x-glowX,y-glowY);
-    const pulse=(Math.sin(ts*0.0012*Number(p.dataset.speed)+Number(p.dataset.phase))+1)/2;
-    const influence=Math.max(0,1-d/300);
+    const dx=x-glowX,dy=y-glowY;
 
-    // La cara de cada tesela permanece opaca: sólo se retroilumina la junta.
+    // Distancia elíptica rotada: halo largo y estrecho.
+    const along= dx*ca + dy*sa;
+    const across=-dx*sa + dy*ca;
+    const ellipse=Math.sqrt((along*along)/(haloLong*haloLong)+(across*across)/(haloShort*haloShort));
+
+    // Smoothstep invertido para que el borde aparezca/desaparezca sin cortes visibles.
+    const raw=Math.max(0,Math.min(1,1-ellipse));
+    const influence=raw*raw*(3-2*raw);
+    const pulse=.90+.10*Math.sin(ts*0.00042*Number(p.dataset.speed)+Number(p.dataset.phase));
+
     p.style.fill="var(--color-base-300)";
     p.style.fillOpacity="1";
     p.style.stroke="var(--color-primary)";
-    p.style.strokeOpacity=(0.045+influence*0.72*(0.62+0.38*pulse)).toFixed(3);
+    p.style.strokeOpacity=(0.035+influence*0.42*pulse).toFixed(3);
 
-    if(influence>.08){
-      const near=(2+10*influence).toFixed(1);
-      const far=(5+22*influence).toFixed(1);
+    if(influence>.035){
+      const near=(1.5+5.5*influence).toFixed(1);
+      const far=(3+12*influence).toFixed(1);
       p.style.filter=
         "drop-shadow(0 0 "+near+"px var(--color-primary)) "+
-        "drop-shadow(0 0 "+far+"px color-mix(in oklab,var(--color-primary) 55%,transparent))";
+        "drop-shadow(0 0 "+far+"px color-mix(in oklab,var(--color-primary) 42%,transparent))";
     }else{
       p.style.filter="none";
     }
