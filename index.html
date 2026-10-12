@@ -1392,8 +1392,16 @@ function chordPitchClasses(chord=CHORDS[Number(chordType.value)]||CHORDS[0],root
   return [...new Set(chord.ints.map(x=>(rootPc+x)%12))];
 }
 function candidateGuitarVoicings(){
-  const pcs=chordPitchClasses(),rootPc=NOTE_INDEX[chordRoot.value],candidates=[];
+  const chord=CHORDS[Number(chordType.value)]||CHORDS[0];
+  const rootPc=NOTE_INDEX[chordRoot.value];
+  const pcs=chordPitchClasses(chord,rootPc);
+  const inv=Math.max(0,Math.min(chord.ints.length-1,Number(chordInversion.value)||0));
+  const targetMidis=chordMidis(chordRoot.value,chord,inv,Number(chordOctave.value)||3);
+  const desiredBassPc=targetMidis[0]%12;
+  const targetCenter=targetMidis.reduce((a,b)=>a+b,0)/targetMidis.length;
+  const candidates=[];
   const maxSpan=4;
+
   for(let base=0;base<=20;base++){
     const choices=GUITAR_OPEN_MIDI.map(open=>{
       const arr=[];
@@ -1403,35 +1411,40 @@ function candidateGuitarVoicings(){
       }
       return arr;
     });
+
     const shape=new Array(6).fill(null);
-    let lastMidi=-Infinity,usedPcs=new Set(),fretted=[];
+    let lastMidi=-Infinity,usedPcs=new Set(),fretted=[],playedMidis=[];
+
     for(let si=0;si<6;si++){
-      let opts=choices[si].filter(f=>{
-        const midi=GUITAR_OPEN_MIDI[si]+f;
-        return midi>lastMidi;
-      });
-      if(!opts.length) continue;
+      let opts=choices[si].filter(f=>GUITAR_OPEN_MIDI[si]+f>lastMidi);
+      if(!opts.length)continue;
+
       opts.sort((a,b)=>{
-        const pa=(GUITAR_OPEN_MIDI[si]+a)%12,pb=(GUITAR_OPEN_MIDI[si]+b)%12;
-        const ar=pa===rootPc?0:1,br=pb===rootPc?0:1;
-        const au=usedPcs.has(pa)?1:0,bu=usedPcs.has(pb)?1:0;
-        return au-bu || ar-br || a-b;
+        const ma=GUITAR_OPEN_MIDI[si]+a,mb=GUITAR_OPEN_MIDI[si]+b;
+        const pa=ma%12,pb=mb%12;
+        const bassBiasA=playedMidis.length===0 && pa===desiredBassPc ? -4 : 0;
+        const bassBiasB=playedMidis.length===0 && pb===desiredBassPc ? -4 : 0;
+        const newA=usedPcs.has(pa)?1:0,newB=usedPcs.has(pb)?1:0;
+        const distA=Math.abs(ma-targetCenter)*.08,distB=Math.abs(mb-targetCenter)*.08;
+        return (bassBiasA+newA+distA)-(bassBiasB+newB+distB) || a-b;
       });
-      const fret=opts[0];
-      shape[si]=fret;
-      lastMidi=GUITAR_OPEN_MIDI[si]+fret;
-      usedPcs.add(lastMidi%12);
+
+      const fret=opts[0],midi=GUITAR_OPEN_MIDI[si]+fret;
+      shape[si]=fret;lastMidi=midi;playedMidis.push(midi);usedPcs.add(midi%12);
       if(fret>0)fretted.push(fret);
     }
-    const played=shape.filter(x=>x!==null).length;
-    if(played<3)continue;
+
+    if(playedMidis.length<3)continue;
     const covers=pcs.filter(pc=>usedPcs.has(pc)).length;
-    const hasRoot=usedPcs.has(rootPc);
+    const bassPc=playedMidis[0]%12;
+    const avg=playedMidis.reduce((a,b)=>a+b,0)/playedMidis.length;
     const span=fretted.length?Math.max(...fretted)-Math.min(...fretted):0;
-    const openCount=shape.filter(x=>x===0).length;
-    const score=covers*18+(hasRoot?9:0)+played*2-openCount*.3-span*.8+Math.max(0,8-base)*.08;
-    candidates.push({shape,base,score,covers,played});
+    const registerDistance=Math.abs(avg-targetCenter);
+    const inversionBonus=bassPc===desiredBassPc?28:-18;
+    const score=covers*18+inversionBonus+playedMidis.length*2-span*.8-registerDistance*1.15;
+    candidates.push({shape,base,score,covers,played:playedMidis.length,bassPc,avg,targetMidis});
   }
+
   candidates.sort((a,b)=>b.score-a.score);
   const out=[],seen=new Set();
   for(const c of candidates){
@@ -1524,6 +1537,12 @@ function renderChordFretboard(){
   const W=1500,H=310,left=76,right=24,top=48,bottom=46;
   const boardW=W-left-right,boardH=H-top-bottom,fretW=boardW/25,stringGap=boardH/5;
   const pcs=new Set(chordPitchClasses()),rootPc=NOTE_INDEX[chordRoot.value],v=selectedGuitarVoicing();
+  const currentChord=CHORDS[Number(chordType.value)]||CHORDS[0];
+  const invLabel=chordInversion.options[chordInversion.selectedIndex]?.text||"Posición fundamental";
+  const regLabel=chordOctave.options[chordOctave.selectedIndex]?.text||"";
+  const context=svgEl("text",{x:left,y:24,fill:"var(--color-base-content)","font-size":"13","font-weight":"700"});
+  context.textContent=AMERICAN_NAMES[rootPc]+currentChord.sym+" · "+invLabel+" · "+regLabel;
+  chordFretboard.appendChild(context);
   const selected=new Set();
   if(v)v.shape.forEach((f,si)=>{if(f!==null)selected.add(si+":"+f)});
   chordFretboard.appendChild(svgEl("rect",{x:left,y:top,width:boardW,height:boardH,rx:10,fill:"#5a351f",stroke:"#8a5a38"}));
@@ -1555,7 +1574,10 @@ function renderChordVisuals(){
   const v=selectedGuitarVoicing();
   if(!v){chordShapeNote.textContent="No se encontró una digitación compacta para esta combinación.";return}
   const shape=v.shape.map(x=>x===null?"X":x).join(" · ");
-  chordShapeNote.textContent="6ª→1ª cuerda: "+shape+" · X = cuerda silenciada · 0 = cuerda al aire.";
+  const bassMidi=guitarVoicingMidis(v)[0];
+  const invLabel=chordInversion.options[chordInversion.selectedIndex]?.text||"Posición fundamental";
+  const regLabel=chordOctave.options[chordOctave.selectedIndex]?.text||"";
+  chordShapeNote.textContent="6ª→1ª cuerda: "+shape+" · Bajo: "+(bassMidi!==undefined?noteNameFromMidi(bassMidi):"—")+" · "+invLabel+" · "+regLabel+" · X = silenciada · 0 = al aire.";
 }
 
 function initHarmony(){
@@ -1703,10 +1725,10 @@ document.addEventListener("click",e=>{
 
 chordRoot.addEventListener("change",()=>{updateHarmonyDisplay();updateChordPositions();renderProgression()});
 chordType.addEventListener("change",()=>{updateInversions();updateHarmonyDisplay();updateChordPositions()});
-chordInversion.addEventListener("change",updateHarmonyDisplay);
+chordInversion.addEventListener("change",()=>{updateHarmonyDisplay();updateChordPositions()});
 chordPosition.addEventListener("change",renderChordVisuals);
 playGuitarVoicingBtn.addEventListener("click",()=>playChordMidis(guitarVoicingMidis(selectedGuitarVoicing()),1.8));
-chordOctave.addEventListener("change",updateHarmonyDisplay);
+chordOctave.addEventListener("change",()=>{updateHarmonyDisplay();updateChordPositions()});
 playChordBtn.addEventListener("click",()=>playChordMidis(chordMidis()));
 playArpeggioBtn.addEventListener("click",()=>playArpeggioMidis(chordMidis()));
 progressionStyle.addEventListener("change",updateProgressionTypes);
